@@ -1,0 +1,367 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<style>
+
+
+</style>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Exemplos WebGL</title>
+<script src="jquery-1.11.3.js"></script>
+<script src="webgl-utils.js"></script>
+<script src="webgl-3d-math.js"></script>
+<script src="webgl-obj-loader.js"></script>
+<script id="shader-fs" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec2 vTextureCoord;
+	varying vec4 vLightResult;
+    uniform sampler2D uSampler;
+
+    void main(void) {
+		vec4 texelColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+        gl_FragColor = vec4(texelColor.rgb * vLightResult.rgb, texelColor.a);
+    }
+</script>
+
+<script id="shader-vs" type="x-shader/x-vertex">
+    attribute vec3 a_position;
+	attribute vec3 a_normal;
+    attribute vec2 a_text_coord;
+	
+	uniform mat4 u_PMatrix;
+	uniform mat4 u_MVMatrix;
+	uniform mat4 u_normal_matrix;
+	
+	uniform float u_shininess;
+	uniform vec3 u_light_direction;
+	
+	uniform vec4 u_ambient_light;
+	uniform vec4 u_diffuse_light;
+	uniform vec4 u_specular_light;
+	
+	uniform vec4 u_ambient_material;
+	uniform vec4 u_diffuse_material;
+	uniform vec4 u_specular_material;
+	
+	uniform bool u_use_light;
+	
+
+    varying vec2 vTextureCoord;
+	varying vec4 vLightResult;
+
+
+    void main(void) {
+	
+		vec4 vertexWorld = u_MVMatrix * vec4(a_position, 1.0);
+		gl_Position = u_PMatrix * u_MVMatrix * vec4(a_position, 1.0);;
+		vec3 transformedNormal = vec3(u_normal_matrix * vec4(a_normal, 0.0));
+        vTextureCoord = a_text_coord;
+		
+		//Lighting
+		if(u_use_light)
+		{
+			//vec3 pointLightDirection = normalize((u_MVMatrix * u_light_position) - vertexWorld.xyz);
+			//vec3 L = pointLightDirection;
+			vec3 vEyeVec = -vec3(vertexWorld.xyz);
+			vec3 L = normalize(u_light_direction);
+			vec3 N = normalize(transformedNormal);
+			
+			
+			//Lambert's cosine law
+			float lambertTerm = max(dot(N,-L),0.0);
+			
+			//Ambient Term
+			vec4 Ia = u_ambient_light * u_ambient_material;
+			
+			//Diffuse Term
+			vec4 Id = vec4(0.0,0.0,0.0,1.0);
+		 
+			//Specular Term
+			vec4 Is = vec4(0.0,0.0,0.0,1.0);
+			
+			vLightResult = Ia;
+			if(lambertTerm > 0.0) {
+			    Id = u_diffuse_light * u_diffuse_material * lambertTerm;
+				vec3 E = normalize(vEyeVec);
+				vec3 R = reflect(-L, N);
+				float specular = pow( max(dot(R, E), 0.0), u_shininess);
+				Is = u_specular_light * u_specular_material * specular; //add specular term*/
+				vLightResult += Id + Is;
+			}
+			vLightResult.a = 1.0;
+		}
+		else
+		{
+			vLightResult = vec4(1.0, 1.0, 1.0, 1.0);
+		}
+		
+		
+    }
+</script>
+<script type="text/javascript">
+
+var models = {};
+
+function webGLStart(meshes) {
+
+  /*
+		Initializing canvas
+  */
+  var canvas = document.getElementById("aCanvas");
+  var gl = setupWebGL(canvas);
+  if (!gl) {
+    return;
+  }
+  gl.enable(gl.DEPTH_TEST);
+
+  /*
+		Compiling and linking the shaders
+  */
+  var program = createProgramFromScripts(gl, ["shader-vs", "shader-fs"]);
+  gl.useProgram(program);// Tells which shaders we are going to use (we can have multiple shaders)
+
+  
+  /*
+		Variables to communicate with the variables in the shaders
+  */
+  var positionLocation = gl.getAttribLocation(program, "a_position");
+  gl.enableVertexAttribArray(positionLocation);
+  var vertexNormalLocation = gl.getAttribLocation(program, "a_normal");
+  gl.enableVertexAttribArray(vertexNormalLocation);
+  var textureLocation = gl.getAttribLocation(program, "a_text_coord");
+  gl.enableVertexAttribArray(textureLocation);
+  
+
+  var modelViewLocation = gl.getUniformLocation(program, "u_MVMatrix");
+  var projectionLocation = gl.getUniformLocation(program, "u_PMatrix");
+  var normalMatrixLocation = gl.getUniformLocation(program, "u_normal_matrix");
+  var samplerLocation = gl.getUniformLocation(program, "uSampler");
+  
+  var ambientLightLocation = gl.getUniformLocation(program, "u_ambient_light");
+  var ambientMaterialLocation = gl.getUniformLocation(program, "u_ambient_material");
+  var diffuseLightLocation = gl.getUniformLocation(program, "u_diffuse_light");
+  var diffuseMaterialLocation = gl.getUniformLocation(program, "u_diffuse_material");
+  var specularLightLocation = gl.getUniformLocation(program, "u_specular_light");
+  var specularMaterialLocation = gl.getUniformLocation(program, "u_specular_material");
+  var lightDirectionLocation = gl.getUniformLocation(program, "u_light_direction");
+  var shininessLocation = gl.getUniformLocation(program, "u_shininess");
+  var useLightLocation = gl.getUniformLocation(program, "u_use_light");
+  
+	
+	/*
+		Initialize models buffers
+	*/
+	models = meshes;
+	
+	
+	
+	//console.log(models.mario);
+	
+	
+	/*
+		Function for binding a texture and determinate the texture filter
+	*/
+	function handleLoadedTexture(texture) {
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+    }
+	
+	/*
+		Creating the texture
+	*/
+		var neheTexture = gl.createTexture();
+        neheTexture.image = new Image();
+        neheTexture.image.onload = function () {
+            handleLoadedTexture(neheTexture)
+        }
+		//neheTexture.image.crossOrigin = "Anonymous";
+        neheTexture.image.src = "modelText.jpg";
+	
+	function radToDeg(r) {
+    return r * 180 / Math.PI;
+  }
+
+  function degToRad(d) {
+    return d * Math.PI / 180;
+  }
+  
+    /*
+		Initialization of parameters for the draw function
+	*/
+    var projectionMatrix = makeIdentity();
+    var viewMatrix = makeIdentity();
+    var modelMatrix = makeIdentity();
+	
+	var camPos = [0,0,-4];
+	var camTarget = [0,0,0];
+	
+	var lightDirection = [0,0,0];
+	
+    var ambientLight = [1,1,1,0];
+	var diffuseLight = [0,0,0,0];
+	var specularLight = [0,0,0,0];
+	var shininess = 180.0;
+	
+	var ambientMaterial = [1,1,1,0];
+	var diffuseMaterial = [0,0,0,0];
+	var specularMaterial = [0,0,0,0];
+	
+	var lighting = false;
+	
+	gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	gl.clearDepth(1.0);
+	var time_old=0;
+	var angleToRotate=0;
+	
+	 
+	 OBJ.initMeshBuffers(gl, models.mario);
+	 OBJ.initMeshBuffers(gl, models.track);
+  /*
+		Our draw function
+  */
+  var drawAnimated=function(time) {
+
+		gl.viewport(0.0, 0.0, canvas.clientWidth, canvas.clientHeight);
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		
+		//Getting the inputs for lights
+		//getTextInput();
+		
+		// Definition of our projection and camera matrix and sending to the vertex shader
+		projectionMatrix = makePerspective(degToRad(60), 
+				  canvas.clientWidth / canvas.clientHeight, 1, 2000);
+		gl.uniformMatrix4fv(projectionLocation, false, projectionMatrix);
+		
+		// Definition of our camera matrix
+		viewMatrix = makeLookAt(
+		  camPos, //Camera position
+		  camTarget, //Target
+		  [0,1,0] //Up Vector
+		);
+		
+		// Rotation of the object
+		var dt=time-time_old;
+		modelMatrix = makeIdentity();
+		angleToRotate+=dt*0.002;
+		modelMatrix = matrixMultiply(modelMatrix, makeYRotation(angleToRotate));
+		time_old = time;
+		
+		
+		// Multiplying model and camera matrix to send to the vertex buffer
+		var modelView = matrixMultiply(modelMatrix,viewMatrix);
+		gl.uniformMatrix4fv(modelViewLocation, false, modelView);
+		
+		//  Sending the normal matrix to the vertex shader (since we are transforming our vertex,
+		// the normals need to transform together, but maintaining perpendicularity with the triangle)
+		// Explanation of this matrix too advanced to our context, but if you want to understand better,
+		// read this article: http://www.lighthouse3d.com/tutorials/glsl-12-tutorial/the-normal-matrix/
+		var normalMatrix = makeTranspose(makeInverse(modelView));
+		gl.uniformMatrix4fv(normalMatrixLocation, false, normalMatrix);
+		
+		/*
+			Sending light values to the shaders
+		*/
+		gl.uniform1i(useLightLocation, lighting);
+		
+		gl.uniform3fv(lightDirectionLocation, lightDirection);
+		
+		gl.uniform4fv(ambientLightLocation, ambientLight);
+		gl.uniform4fv(diffuseLightLocation, diffuseLight);
+		gl.uniform4fv(specularLightLocation, specularLight);
+		gl.uniform1f(shininessLocation, shininess);
+		
+		gl.uniform4fv(ambientMaterialLocation, ambientMaterial);
+		gl.uniform4fv(diffuseMaterialLocation, diffuseMaterial);
+		gl.uniform4fv(specularMaterialLocation, specularMaterial);
+		
+		/*
+			Sending the buffers to the shaders
+		*/
+		/*
+			Drawing Mario model
+		*/
+		gl.bindBuffer(gl.ARRAY_BUFFER, models.mario.vertexBuffer);
+		gl.vertexAttribPointer(positionLocation, models.mario.vertexBuffer.itemSize, gl.FLOAT, false, 0,0);
+		
+		if(!models.mario.textures.length){
+			gl.disableVertexAttribArray(textureLocation);
+		}
+		else{
+			gl.enableVertexAttribArray(textureLocation);
+			gl.bindBuffer(gl.ARRAY_BUFFER, models.mario.textureBuffer);
+			gl.vertexAttribPointer(textureLocation, models.mario.textureBuffer.itemSize, gl.FLOAT, false, 0,0);
+		}
+		
+		if(!models.mario.vertexNormals.length){
+			gl.disableVertexAttribArray(vertexNormalLocation);
+		}
+		else{
+			gl.enableVertexAttribArray(vertexNormalLocation);
+			gl.bindBuffer(gl.ARRAY_BUFFER, models.mario.normalBuffer);
+			gl.vertexAttribPointer(vertexNormalLocation, models.mario.normalBuffer.itemSize, gl.FLOAT, false, 0,0);
+		}
+
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, neheTexture);
+		gl.uniform1i(samplerLocation, 0);
+		
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.mario.indexBuffer);
+		gl.drawElements(gl.TRIANGLES, models.mario.indices.length, gl.UNSIGNED_SHORT, 0);
+		
+		/*
+			Drawing the track
+		*/	
+		gl.bindBuffer(gl.ARRAY_BUFFER, models.track.vertexBuffer);
+		gl.vertexAttribPointer(positionLocation, models.track.vertexBuffer.itemSize, gl.FLOAT, false, 0,0);
+		
+		if(!models.track.textures.length){
+			gl.disableVertexAttribArray(textureLocation);
+		}
+		else{
+			gl.enableVertexAttribArray(textureLocation);
+			gl.bindBuffer(gl.ARRAY_BUFFER, models.track.textureBuffer);
+			gl.vertexAttribPointer(textureLocation, models.track.textureBuffer.itemSize, gl.FLOAT, false, 0,0);
+		}
+		
+		if(!models.track.vertexNormals.length){
+			gl.disableVertexAttribArray(vertexNormalLocation);
+		}
+		else{
+			gl.enableVertexAttribArray(vertexNormalLocation);
+			gl.bindBuffer(gl.ARRAY_BUFFER, models.track.normalBuffer);
+			gl.vertexAttribPointer(vertexNormalLocation, models.track.normalBuffer.itemSize, gl.FLOAT, false, 0,0);
+		}
+
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, neheTexture);
+		gl.uniform1i(samplerLocation, 0);
+		
+
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.track.indexBuffer);
+		gl.drawElements(gl.TRIANGLES, models.track.indices.length, gl.UNSIGNED_SHORT, 0);
+		
+		window.requestAnimationFrame(drawAnimated);
+  }
+  drawAnimated(0);
+  
+}
+
+window.onload = function(){
+	OBJ.downloadMeshes({
+		'mario': 'models/Mario/mk_kart.obj',
+		'track': 'models/Pista/raceway_mariokart.obj'
+	}, webGLStart);
+}
+</script>
+</head>
+<body>
+		<h4>Exemplo 5 WebGL</h4>
+		<div id="section">
+			<canvas id="aCanvas" style="border: none;" width="500" height="500" align="center"></canvas>
+		</div>
+</body>
+</html>
