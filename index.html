@@ -152,7 +152,11 @@
     
     //Variáveis NEHE
     var neheTexture;
-    
+
+	//Variáveis de input
+	var currentlyPressedKeys = {};
+	document.onkeydown = handleKeyDown;
+	document.onkeyup = handleKeyUp;
     
     //Funções matemáticas
     function radToDeg(r) {
@@ -262,16 +266,74 @@
         gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
     }
     
+	function init(meshes) {
+        canvas = document.getElementById("Karttelan-canvas");
+        initGL(canvas);
+        initShaders();
+        initModels(meshes);
+        initTexture();
+        initDrawingParameters();
+
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.enable(gl.DEPTH_TEST);
+
+		time =0;
+        gameLoop();
+    }
+
+    //Funções de input
+	function handleKeyDown(event) {
+        currentlyPressedKeys[event.keyCode] = true;
+    }
+
+	function handleKeyUp(event) {
+        currentlyPressedKeys[event.keyCode] = false;
+	}
+	
+	function handleKey() {
+		if (currentlyPressedKeys[87]) {
+            // W
+			time+=1;
+			//xTranslate = 0;
+        }
+		if (currentlyPressedKeys[83]) {
+			// S
+			time-=1;
+			//xTranslate = 0;
+		}				
+		if (currentlyPressedKeys[65]) {
+			// A
+			time+=10;
+			//yTranslate = 0;
+		}
+		if (currentlyPressedKeys[68]) {
+			// D
+			time-=10;
+			//yTranslate = 0;
+		}
+		if (currentlyPressedKeys[67]) {
+			// C
+			//Camera +
+			camPos[1]+=1;
+		}
+		if (currentlyPressedKeys[86]) {
+			//V
+			//Camera -
+			camPos[1]-=1;
+		}
+
+	}
     
-    //Funções do Game loop
-    function draw(time) {
+	function input() {
+		handleKey();
+	}
+	//Funções do Game loop
+	function draw(time) {
         console.log("Drawing");
 
         gl.viewport(0.0, 0.0, canvas.clientWidth, canvas.clientHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         
-        //Getting the inputs for lights
-        //getTextInput();
         
         // Definition of our projection and camera matrix and sending to the vertex shader
         projectionMatrix = makePerspective(degToRad(60), 
@@ -289,8 +351,10 @@
         var dt=time-time_old;
         modelMatrix = makeIdentity();
         angleToRotate+=dt*0.002;
-        modelMatrix = matrixMultiply(modelMatrix, makeYRotation(angleToRotate));
+        //modelMatrix = matrixMultiply(modelMatrix, makeYRotation(angleToRotate));
         time_old = time;
+		
+		viewMatrix= matrixMultiply(viewMatrix, makeYRotation(angleToRotate));
         
         
         // Multiplying model and camera matrix to send to the vertex buffer
@@ -389,33 +453,18 @@
     
     }
 
-    function update()
-    {
+    function update() {
         console.log(time);
     }
     
-    function gameLoop()
-    {
+    function gameLoop() {
+		input();
         update();
         draw(time);
         requestAnimationFrame(gameLoop);
-		time+=10;
+		
     }
 
-    function init(meshes) {
-        canvas = document.getElementById("Karttelan-canvas");
-        initGL(canvas);
-        initShaders();
-        initModels(meshes);
-        initTexture();
-        initDrawingParameters();
-
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);
-        gl.enable(gl.DEPTH_TEST);
-
-		time =0;
-        gameLoop();
-    }
 
     window.onload = function(){
         OBJ.downloadMeshes({
