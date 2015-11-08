@@ -24,7 +24,6 @@ MovableObject.prototype =
 	},
 	draw: function()
 	{
-		
 		modelMatrix = makeIdentity();
 		modelMatrix = matrixMultiply(modelMatrix, makeYRotation(this.angle));
 		modelMatrix = matrixMultiply(modelMatrix, makeTranslation(this.position[0],this.position[1],this.position[2]));
@@ -32,8 +31,8 @@ MovableObject.prototype =
 		modelView = matrixMultiply(modelMatrix,viewMatrix);
 		gl.uniformMatrix4fv(modelViewLocation, false, modelView);
 		
-		var normalMatrix = makeTranspose(makeInverse(modelView));
-		gl.uniformMatrix4fv(normalMatrixLocation, false, normalMatrix);
+		//var normalMatrix = makeTranspose(makeInverse(modelView));
+		//gl.uniformMatrix4fv(normalMatrixLocation, false, normalMatrix);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.model.vertexBuffer);
 		gl.vertexAttribPointer(positionLocation, this.model.vertexBuffer.itemSize, gl.FLOAT, false, 0,0);
 		

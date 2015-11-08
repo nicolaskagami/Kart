@@ -131,12 +131,15 @@
     var projectionMatrix;
     var viewMatrix;
     var modelMatrix;
+	
+	var modelView;
     
 	//Variáveis de Camera	
 	var currentCamPosition;
 	var currentCamTarget;
 	
 	var xCamTranslate;
+	var camAngle;
 	var zCamTranslate;
     
     var lightDirection;
@@ -252,8 +255,9 @@
         viewMatrix = makeIdentity();
         modelMatrix = makeIdentity();
 		
-        currentCamPosition = [0,-1,-2.2];
-        currentCamTarget = [0,-1,0];
+		camAngle =0;
+        currentCamPosition = [0,1,-3];
+        currentCamTarget = [1,0,3];
 		
         currentMarioPosition = [0,0,0];
         lightDirection = [0,0,0];
@@ -338,13 +342,18 @@
 		if (currentlyPressedKeys[87]) {
             // W
 			//time+=1;
-			zCamTranslate = - 0.1;
+			//zCamTranslate = - 0.1;
+			currentCamPosition[1] -=0.1;
+			//currentCamTarget[2] -=0.1;
 			//xTranslate = 0;
         } else
 		if (currentlyPressedKeys[83]) {
 			// S
 			//time-=1;
-			zCamTranslate = 0.1;
+			//zCamTranslate = 0.1;
+			currentCamPosition[1] +=0.1;
+			
+			//currentCamTarget[2] +=0.1;
 			//xTranslate = 0;
 		} else {
 			zCamTranslate = 0.0;
@@ -352,13 +361,17 @@
 		if (currentlyPressedKeys[65]) {
 			// A
 			//time+=10;
-			xCamTranslate = 0.1;
+			currentCamPosition[0] +=0.1;
+			
+			currentCamTarget[0] +=0.1;
 			//yTranslate = 0;
 		} else
 		if (currentlyPressedKeys[68]) {
 			// D
 			//time-=10;
-			xCamTranslate = - 0.1;
+			currentCamPosition[0] -=0.1;
+			
+			currentCamTarget[0] -=0.1;
 			//yTranslate = 0;
 		} else {
 			xCamTranslate = 0.0;
@@ -377,6 +390,10 @@
 			//V
 			players[0].turn(-0.1);
 		}
+		if (currentlyPressedKeys[90]) {
+			//V
+			camAngle+=0.1;
+		}
 
 	}
     
@@ -389,17 +406,13 @@
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         if(1)
 		{
-			console.log(players[0].direction);
-			currentCamPosition[0] = 0;//players[0].position[0] + players[0].direction[0];
-			
-			currentCamPosition[1] = -1;
-			currentCamPosition[2] = -3;//players[0].position[2] - players[0].direction[2];
-			
-			
-			console.log(currentCamPosition);
-			currentCamTarget[0] = -players[0].position[0];
-			currentCamTarget[1] = -1;
-			currentCamTarget[2] = players[0].position[2];
+			currentCamPosition[0] = players[0].position[0] - 2*players[0].direction[0];
+			currentCamPosition[1] = 1;
+			currentCamPosition[2] = players[0].position[2] - 2*players[0].direction[2];
+	
+			currentCamTarget[0] = players[0].position[0];
+			currentCamTarget[1] = 1;
+			currentCamTarget[2] =  players[0].position[2];//players[0].position[2];
 		
 
 		
@@ -425,31 +438,24 @@
         // Definition of our camera matrix
         viewMatrix = makeLookAt(
           currentCamPosition, //Camera position
-          currentCamTarget, //Target
+          currentCamTarget, //TargetTarget
           [0,1,0] //Up Vector
         );
+		viewMatrix = makeInverse(viewMatrix);
+		
         
-        // Rotation of the object
-		/*
-        var dt=time-time_old;
-        modelMatrix = makeIdentity();
-        angleToRotate+=dt*0.0009;
-        //modelMatrix = matrixMultiply(modelMatrix, makeYRotation(angleToRotate));
-        time_old = time;
-		*/
-		//viewMatrix= matrixMultiply(viewMatrix, makeYRotation(angleToRotate));
-
-        modelMatrix = makeIdentity();
+		modelMatrix = makeIdentity();
         // Multiplying model and camera matrix to send to the vertex buffer
-        var modelView = matrixMultiply(modelMatrix,viewMatrix);
+		
+        modelView = matrixMultiply(modelMatrix,viewMatrix);
         gl.uniformMatrix4fv(modelViewLocation, false, modelView);
         
         //  Sending the normal matrix to the vertex shader (since we are transforming our vertex,
         // the normals need to transform together, but maintaining perpendicularity with the triangle)
         // Explanation of this matrix too advanced to our context, but if you want to understand better,
         // read this article: http://www.lighthouse3d.com/tutorials/glsl-12-tutorial/the-normal-matrix/
-        var normalMatrix = makeTranspose(makeInverse(modelView));
-        gl.uniformMatrix4fv(normalMatrixLocation, false, normalMatrix);
+        //var normalMatrix = makeTranspose(makeInverse(modelView));
+        //gl.uniformMatrix4fv(normalMatrixLocation, false, normalMatrix);
         
         /*
             Sending light values to the shaders
@@ -470,10 +476,14 @@
         /*
             Sending the buffers to the shaders
         */
+		modelMatrix = makeIdentity();
+		modelView = matrixMultiply(modelMatrix,viewMatrix);
+		gl.uniformMatrix4fv(modelViewLocation, false, modelView);
 		gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-        setMatrixUniforms();
+        //setMatrixUniforms();
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
+		
 		        for(var i=0;i<players.length;i++)
         {
             players[i].draw();
