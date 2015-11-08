@@ -1,0 +1,1544 @@
+
+<!-- saved from url=(0043)http://www.inf.ufrgs.br/~gjfeller/ex05.html -->
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+
+<title>Exemplos WebGL</title>
+<script src="./jquery-1.11.3.js"></script>
+<script src="./webgl-utils.js"></script>
+<script src="./webgl-3d-math.js"></script>
+<script src="./webgl-obj-loader.js"></script>
+<script id="shader-fs" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec2 vTextureCoord;
+	varying vec4 vLightResult;
+    uniform sampler2D uSampler;
+
+    void main(void) {
+		vec4 texelColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+        gl_FragColor = vec4(texelColor.rgb * vLightResult.rgb, texelColor.a);
+    }
+</script>
+
+<script id="shader-vs" type="x-shader/x-vertex">
+    attribute vec3 a_position;
+	attribute vec3 a_normal;
+    attribute vec2 a_text_coord;
+	
+	uniform mat4 u_PMatrix;
+	uniform mat4 u_MVMatrix;
+	uniform mat4 u_normal_matrix;
+	
+	uniform float u_shininess;
+	uniform vec3 u_light_direction;
+	
+	uniform vec4 u_ambient_light;
+	uniform vec4 u_diffuse_light;
+	uniform vec4 u_specular_light;
+	
+	uniform vec4 u_ambient_material;
+	uniform vec4 u_diffuse_material;
+	uniform vec4 u_specular_material;
+	
+	uniform bool u_use_light;
+	
+
+    varying vec2 vTextureCoord;
+	varying vec4 vLightResult;
+
+
+    void main(void) {
+	
+		vec4 vertexWorld = u_MVMatrix * vec4(a_position, 1.0);
+		gl_Position = u_PMatrix * u_MVMatrix * vec4(a_position, 1.0);;
+		vec3 transformedNormal = vec3(u_normal_matrix * vec4(a_normal, 0.0));
+        vTextureCoord = a_text_coord;
+		
+		//Lighting
+		if(u_use_light)
+		{
+			//vec3 pointLightDirection = normalize((u_MVMatrix * u_light_position) - vertexWorld.xyz);
+			//vec3 L = pointLightDirection;
+			vec3 vEyeVec = -vec3(vertexWorld.xyz);
+			vec3 L = normalize(u_light_direction);
+			vec3 N = normalize(transformedNormal);
+			
+			
+			//Lambert's cosine law
+			float lambertTerm = max(dot(N,-L),0.0);
+			
+			//Ambient Term
+			vec4 Ia = u_ambient_light * u_ambient_material;
+			
+			//Diffuse Term
+			vec4 Id = vec4(0.0,0.0,0.0,1.0);
+		 
+			//Specular Term
+			vec4 Is = vec4(0.0,0.0,0.0,1.0);
+			
+			vLightResult = Ia;
+			if(lambertTerm > 0.0) {
+			    Id = u_diffuse_light * u_diffuse_material * lambertTerm;
+				vec3 E = normalize(vEyeVec);
+				vec3 R = reflect(-L, N);
+				float specular = pow( max(dot(R, E), 0.0), u_shininess);
+				Is = u_specular_light * u_specular_material * specular; //add specular term*/
+				vLightResult += Id + Is;
+			}
+			vLightResult.a = 1.0;
+		}
+		else
+		{
+			vLightResult = vec4(1.0, 1.0, 1.0, 1.0);
+		}
+		
+		
+    }
+</script>
+<style type="text/css"></style><script type="text/javascript">
+
+var models = {};
+
+function webGLStart(meshes) {
+
+  /*
+		Initializing canvas
+  */
+  var canvas = document.getElementById("aCanvas");
+  var gl = setupWebGL(canvas);
+  if (!gl) {
+    return;
+  }
+  gl.enable(gl.DEPTH_TEST);
+
+  /*
+		Treatment of keyboard and mouse input
+  */
+  var currentlyPressedKeys = {};
+  var mouseDown = false;
+  
+  function handleKeyDown(event) {
+        currentlyPressedKeys[event.keyCode] = true;
+    }
+
+
+  function handleKeyUp(event) {
+        currentlyPressedKeys[event.keyCode] = false;
+  }
+  
+  document.onkeydown = handleKeyDown;
+  document.onkeyup = handleKeyUp;
+  
+  
+  /*
+		Compiling and linking the shaders
+  */
+  var program = createProgramFromScripts(gl, ["shader-vs", "shader-fs"]);
+  gl.useProgram(program);// Tells which shaders we are going to use (we can have multiple shaders)
+
+  
+  /*
+		Variables to communicate with the variables in the shaders
+  */
+  var positionLocation = gl.getAttribLocation(program, "a_position");
+  gl.enableVertexAttribArray(positionLocation);
+  var vertexNormalLocation = gl.getAttribLocation(program, "a_normal");
+  gl.enableVertexAttribArray(vertexNormalLocation);
+  var textureLocation = gl.getAttribLocation(program, "a_text_coord");
+  gl.enableVertexAttribArray(textureLocation);
+  
+
+  var modelViewLocation = gl.getUniformLocation(program, "u_MVMatrix");
+  var projectionLocation = gl.getUniformLocation(program, "u_PMatrix");
+  var normalMatrixLocation = gl.getUniformLocation(program, "u_normal_matrix");
+  var samplerLocation = gl.getUniformLocation(program, "uSampler");
+  
+  var ambientLightLocation = gl.getUniformLocation(program, "u_ambient_light");
+  var ambientMaterialLocation = gl.getUniformLocation(program, "u_ambient_material");
+  var diffuseLightLocation = gl.getUniformLocation(program, "u_diffuse_light");
+  var diffuseMaterialLocation = gl.getUniformLocation(program, "u_diffuse_material");
+  var specularLightLocation = gl.getUniformLocation(program, "u_specular_light");
+  var specularMaterialLocation = gl.getUniformLocation(program, "u_specular_material");
+  var lightDirectionLocation = gl.getUniformLocation(program, "u_light_direction");
+  var shininessLocation = gl.getUniformLocation(program, "u_shininess");
+  var useLightLocation = gl.getUniformLocation(program, "u_use_light");
+  
+	
+	/*
+		Initialize models buffers
+	*/
+	models = meshes;
+	
+	/*
+		Procedural creation of the track
+	*/
+	var firstTrack = {};
+	function initTrack(track) {
+	
+		track.mainTrack = {};
+		track.mainTrack.vertexPositionData = [];
+		track.mainTrack.vertexNormalData = [];
+		track.mainTrack.vertexTextureData = [];
+		track.mainTrack.indexData = [];
+		
+		
+		track.walls = {};
+		track.walls.vertexPositionData = [];
+		track.walls.vertexNormalData = [];
+		track.walls.vertexTextureData = [];
+		track.walls.indexData = [];
+		
+		track.finishLine = {};
+		track.finishLine.vertexPositionData = [];
+		track.finishLine.vertexNormalData = [];
+		track.finishLine.vertexTextureData = [];
+		track.finishLine.indexData = [];
+		
+		var width = 60.0;
+		var depth = 60.0;
+		var trackWidth = 2.0;
+		var wallHeight = 0.6;
+		var finishLineDepth = 0.2;
+		
+		var index = 0;
+		
+		var initialCoordX = -(width/2.0 + trackWidth);
+		var initialCoordY = 0.0;
+		var initialCoordZ = -(depth/2.0 + trackWidth);
+		
+		/*
+			Finish line definition
+		*/
+		//Quad Vertex 0
+		track.finishLine.vertexPositionData.push(-initialCoordX);
+		track.finishLine.vertexPositionData.push(0.01);
+		track.finishLine.vertexPositionData.push(0.0);
+		track.finishLine.vertexNormalData.push(0.0);
+		track.finishLine.vertexNormalData.push(1.0);
+		track.finishLine.vertexNormalData.push(0.0);
+		track.finishLine.vertexTextureData.push(0.0);
+		track.finishLine.vertexTextureData.push(0.0);
+		//Quad Vertex 1
+		track.finishLine.vertexPositionData.push(-initialCoordX);
+		track.finishLine.vertexPositionData.push(0.01);
+		track.finishLine.vertexPositionData.push(-finishLineDepth);
+		track.finishLine.vertexNormalData.push(0.0);
+		track.finishLine.vertexNormalData.push(1.0);
+		track.finishLine.vertexNormalData.push(0.0);
+		track.finishLine.vertexTextureData.push(0.0);
+		track.finishLine.vertexTextureData.push(1.0);
+		//Quad Vertex 2
+		track.finishLine.vertexPositionData.push(-initialCoordX - trackWidth);
+		track.finishLine.vertexPositionData.push(0.01);
+		track.finishLine.vertexPositionData.push(-finishLineDepth);
+		track.finishLine.vertexNormalData.push(0.0);
+		track.finishLine.vertexNormalData.push(1.0);
+		track.finishLine.vertexNormalData.push(0.0);
+		track.finishLine.vertexTextureData.push(1.0);
+		track.finishLine.vertexTextureData.push(1.0);
+		//Quad Vertex 3
+		track.finishLine.vertexPositionData.push(-initialCoordX - trackWidth);
+		track.finishLine.vertexPositionData.push(0.01);
+		track.finishLine.vertexPositionData.push(0.0);
+		track.finishLine.vertexNormalData.push(0.0);
+		track.finishLine.vertexNormalData.push(1.0);
+		track.finishLine.vertexNormalData.push(0.0);
+		track.finishLine.vertexTextureData.push(1.0);
+		track.finishLine.vertexTextureData.push(0.0);
+		
+		//Adding indices
+		track.finishLine.indexData.push(0);
+		track.finishLine.indexData.push(1);
+		track.finishLine.indexData.push(2);
+			
+		track.finishLine.indexData.push(0);
+		track.finishLine.indexData.push(2);
+		track.finishLine.indexData.push(3);
+		
+		
+		/*
+			Track vertices definition
+		*/
+		
+		var currentCoordX = -(width/2.0 + trackWidth);
+		var currentCoordY = 0.0;
+		var currentCoordZ = -(depth/2.0 + trackWidth);
+		
+		while(currentCoordX < -initialCoordX) {			
+			var firstQuadIndex = index;
+			//Quad Vertex 0
+			track.mainTrack.vertexPositionData.push(currentCoordX);
+			track.mainTrack.vertexPositionData.push(currentCoordY);
+			track.mainTrack.vertexPositionData.push(currentCoordZ);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexNormalData.push(1.0);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexTextureData.push(1.0);
+			track.mainTrack.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 1
+			track.mainTrack.vertexPositionData.push(currentCoordX + trackWidth);
+			track.mainTrack.vertexPositionData.push(currentCoordY);
+			track.mainTrack.vertexPositionData.push(currentCoordZ);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexNormalData.push(1.0);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexTextureData.push(0.0);
+			track.mainTrack.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 2
+			track.mainTrack.vertexPositionData.push(currentCoordX + trackWidth);
+			track.mainTrack.vertexPositionData.push(currentCoordY);
+			track.mainTrack.vertexPositionData.push(currentCoordZ + trackWidth);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexNormalData.push(1.0);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexTextureData.push(0.0);
+			track.mainTrack.vertexTextureData.push(0.0);
+			index++;
+			//Quad Vertex 3
+			track.mainTrack.vertexPositionData.push(currentCoordX);
+			track.mainTrack.vertexPositionData.push(currentCoordY);
+			track.mainTrack.vertexPositionData.push(currentCoordZ + trackWidth);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexNormalData.push(1.0);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexTextureData.push(1.0);
+			track.mainTrack.vertexTextureData.push(0.0);
+			index++;
+			
+			//Adding indices
+			track.mainTrack.indexData.push(firstQuadIndex);
+			track.mainTrack.indexData.push(firstQuadIndex+1);
+			track.mainTrack.indexData.push(firstQuadIndex+2);
+			
+			track.mainTrack.indexData.push(firstQuadIndex);
+			track.mainTrack.indexData.push(firstQuadIndex+2);
+			track.mainTrack.indexData.push(firstQuadIndex+3);
+			
+			//Reflecting in -Z
+			var secondQuadIndex = index;
+			//Quad Vertex 0
+			track.mainTrack.vertexPositionData.push(currentCoordX);
+			track.mainTrack.vertexPositionData.push(currentCoordY);
+			track.mainTrack.vertexPositionData.push(-currentCoordZ);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexNormalData.push(1.0);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexTextureData.push(1.0);
+			track.mainTrack.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 1
+			track.mainTrack.vertexPositionData.push(currentCoordX + trackWidth);
+			track.mainTrack.vertexPositionData.push(currentCoordY);
+			track.mainTrack.vertexPositionData.push(-currentCoordZ);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexNormalData.push(1.0);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexTextureData.push(0.0);
+			track.mainTrack.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 2
+			track.mainTrack.vertexPositionData.push(currentCoordX + trackWidth);
+			track.mainTrack.vertexPositionData.push(currentCoordY);
+			track.mainTrack.vertexPositionData.push(-currentCoordZ - trackWidth);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexNormalData.push(1.0);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexTextureData.push(0.0);
+			track.mainTrack.vertexTextureData.push(0.0);
+			index++;
+			//Quad Vertex 3
+			track.mainTrack.vertexPositionData.push(currentCoordX);
+			track.mainTrack.vertexPositionData.push(currentCoordY);
+			track.mainTrack.vertexPositionData.push(-currentCoordZ - trackWidth);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexNormalData.push(1.0);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexTextureData.push(1.0);
+			track.mainTrack.vertexTextureData.push(0.0);
+			index++;
+			
+			//Adding indices
+			track.mainTrack.indexData.push(secondQuadIndex);
+			track.mainTrack.indexData.push(secondQuadIndex+1);
+			track.mainTrack.indexData.push(secondQuadIndex+2);
+			
+			track.mainTrack.indexData.push(secondQuadIndex);
+			track.mainTrack.indexData.push(secondQuadIndex+2);
+			track.mainTrack.indexData.push(secondQuadIndex+3);
+			
+			var currentCoordX = currentCoordX + trackWidth;	
+		}
+		
+		currentCoordX = -(width/2.0 + trackWidth);
+		currentCoordY = 0.0;
+		currentCoordZ = -(depth/2.0 + trackWidth);
+		
+		while(currentCoordZ < -initialCoordZ) {			
+			var firstQuadIndex = index;
+			//Quad Vertex 0
+			track.mainTrack.vertexPositionData.push(currentCoordX);
+			track.mainTrack.vertexPositionData.push(currentCoordY);
+			track.mainTrack.vertexPositionData.push(currentCoordZ);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexNormalData.push(1.0);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexTextureData.push(1.0);
+			track.mainTrack.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 1
+			track.mainTrack.vertexPositionData.push(currentCoordX + trackWidth);
+			track.mainTrack.vertexPositionData.push(currentCoordY);
+			track.mainTrack.vertexPositionData.push(currentCoordZ);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexNormalData.push(1.0);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexTextureData.push(0.0);
+			track.mainTrack.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 2
+			track.mainTrack.vertexPositionData.push(currentCoordX + trackWidth);
+			track.mainTrack.vertexPositionData.push(currentCoordY);
+			track.mainTrack.vertexPositionData.push(currentCoordZ + trackWidth);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexNormalData.push(1.0);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexTextureData.push(0.0);
+			track.mainTrack.vertexTextureData.push(0.0);
+			index++;
+			//Quad Vertex 3
+			track.mainTrack.vertexPositionData.push(currentCoordX);
+			track.mainTrack.vertexPositionData.push(currentCoordY);
+			track.mainTrack.vertexPositionData.push(currentCoordZ + trackWidth);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexNormalData.push(1.0);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexTextureData.push(1.0);
+			track.mainTrack.vertexTextureData.push(0.0);
+			index++;
+			
+			//Adding indices
+			track.mainTrack.indexData.push(firstQuadIndex);
+			track.mainTrack.indexData.push(firstQuadIndex+1);
+			track.mainTrack.indexData.push(firstQuadIndex+2);
+			
+			track.mainTrack.indexData.push(firstQuadIndex);
+			track.mainTrack.indexData.push(firstQuadIndex+2);
+			track.mainTrack.indexData.push(firstQuadIndex+3);
+			
+			//Reflecting in -X
+			var secondQuadIndex = index;
+			//Quad Vertex 0
+			track.mainTrack.vertexPositionData.push(-currentCoordX);
+			track.mainTrack.vertexPositionData.push(currentCoordY);
+			track.mainTrack.vertexPositionData.push(currentCoordZ);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexNormalData.push(1.0);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexTextureData.push(1.0);
+			track.mainTrack.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 1
+			track.mainTrack.vertexPositionData.push(-currentCoordX - trackWidth);
+			track.mainTrack.vertexPositionData.push(currentCoordY);
+			track.mainTrack.vertexPositionData.push(currentCoordZ);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexNormalData.push(1.0);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexTextureData.push(0.0);
+			track.mainTrack.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 2
+			track.mainTrack.vertexPositionData.push(-currentCoordX - trackWidth);
+			track.mainTrack.vertexPositionData.push(currentCoordY);
+			track.mainTrack.vertexPositionData.push(currentCoordZ + trackWidth);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexNormalData.push(1.0);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexTextureData.push(0.0);
+			track.mainTrack.vertexTextureData.push(0.0);
+			index++;
+			//Quad Vertex 3
+			track.mainTrack.vertexPositionData.push(-currentCoordX);
+			track.mainTrack.vertexPositionData.push(currentCoordY);
+			track.mainTrack.vertexPositionData.push(currentCoordZ + trackWidth);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexNormalData.push(1.0);
+			track.mainTrack.vertexNormalData.push(0.0);
+			track.mainTrack.vertexTextureData.push(1.0);
+			track.mainTrack.vertexTextureData.push(0.0);
+			index++;
+			
+			//Adding indices
+			track.mainTrack.indexData.push(secondQuadIndex);
+			track.mainTrack.indexData.push(secondQuadIndex+1);
+			track.mainTrack.indexData.push(secondQuadIndex+2);
+			
+			track.mainTrack.indexData.push(secondQuadIndex);
+			track.mainTrack.indexData.push(secondQuadIndex+2);
+			track.mainTrack.indexData.push(secondQuadIndex+3);
+			
+			var currentCoordZ = currentCoordZ + trackWidth;	
+		}
+		
+		/*
+			Outside wall vertices definition
+		*/
+		
+		currentCoordX = -(width/2.0 + trackWidth);
+		currentCoordY = 0.0;
+		currentCoordZ = -(depth/2.0 + trackWidth);
+		
+		index = 0;
+		
+		while(currentCoordX < -initialCoordX) {			
+			var firstQuadIndex = index;
+			//Quad Vertex 0
+			track.walls.vertexPositionData.push(currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY);
+			track.walls.vertexPositionData.push(currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			index++;
+			//Quad Vertex 1
+			track.walls.vertexPositionData.push(currentCoordX + trackWidth);
+			track.walls.vertexPositionData.push(currentCoordY);
+			track.walls.vertexPositionData.push(currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			track.walls.vertexTextureData.push(0.0);
+			index++;
+			//Quad Vertex 2
+			track.walls.vertexPositionData.push(currentCoordX + trackWidth);
+			track.walls.vertexPositionData.push(currentCoordY + wallHeight);
+			track.walls.vertexPositionData.push(currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			track.walls.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 3
+			track.walls.vertexPositionData.push(currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY + wallHeight);
+			track.walls.vertexPositionData.push(currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			index++;
+			
+			//Adding indices
+			track.walls.indexData.push(firstQuadIndex);
+			track.walls.indexData.push(firstQuadIndex+1);
+			track.walls.indexData.push(firstQuadIndex+2);
+			
+			track.walls.indexData.push(firstQuadIndex);
+			track.walls.indexData.push(firstQuadIndex+2);
+			track.walls.indexData.push(firstQuadIndex+3);
+			
+			//Reflecting in -Z
+			var secondQuadIndex = index;
+			//Quad Vertex 0
+			track.walls.vertexPositionData.push(currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY);
+			track.walls.vertexPositionData.push(-currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			index++;
+			//Quad Vertex 1
+			track.walls.vertexPositionData.push(currentCoordX + trackWidth);
+			track.walls.vertexPositionData.push(currentCoordY);
+			track.walls.vertexPositionData.push(-currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			track.walls.vertexTextureData.push(0.0);
+			index++;
+			//Quad Vertex 2
+			track.walls.vertexPositionData.push(currentCoordX + trackWidth);
+			track.walls.vertexPositionData.push(currentCoordY + wallHeight);
+			track.walls.vertexPositionData.push(-currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			track.walls.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 3
+			track.walls.vertexPositionData.push(currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY + wallHeight);
+			track.walls.vertexPositionData.push(-currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			index++;
+			
+			//Adding indices
+			track.walls.indexData.push(secondQuadIndex);
+			track.walls.indexData.push(secondQuadIndex+1);
+			track.walls.indexData.push(secondQuadIndex+2);
+			
+			track.walls.indexData.push(secondQuadIndex);
+			track.walls.indexData.push(secondQuadIndex+2);
+			track.walls.indexData.push(secondQuadIndex+3);
+			
+			var currentCoordX = currentCoordX + trackWidth;	
+		}
+		
+		currentCoordX = -(width/2.0 + trackWidth);
+		currentCoordY = 0.0;
+		currentCoordZ = -(depth/2.0 + trackWidth);
+		
+		while(currentCoordZ < -initialCoordZ) {			
+			var firstQuadIndex = index;
+			//Quad Vertex 0
+			track.walls.vertexPositionData.push(currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY);
+			track.walls.vertexPositionData.push(currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			index++;
+			//Quad Vertex 1
+			track.walls.vertexPositionData.push(currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY + wallHeight);
+			track.walls.vertexPositionData.push(currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 2
+			track.walls.vertexPositionData.push(currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY + wallHeight);
+			track.walls.vertexPositionData.push(currentCoordZ + trackWidth);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			track.walls.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 3
+			track.walls.vertexPositionData.push(currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY);
+			track.walls.vertexPositionData.push(currentCoordZ + trackWidth);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			track.walls.vertexTextureData.push(0.0);
+			index++;
+			
+			//Adding indices
+			track.walls.indexData.push(firstQuadIndex);
+			track.walls.indexData.push(firstQuadIndex+1);
+			track.walls.indexData.push(firstQuadIndex+2);
+			
+			track.walls.indexData.push(firstQuadIndex);
+			track.walls.indexData.push(firstQuadIndex+2);
+			track.walls.indexData.push(firstQuadIndex+3);
+			
+			//Reflecting in -X
+			var secondQuadIndex = index;
+			//Quad Vertex 0
+			track.walls.vertexPositionData.push(-currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY);
+			track.walls.vertexPositionData.push(currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			index++;
+			//Quad Vertex 1
+			track.walls.vertexPositionData.push(-currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY + wallHeight);
+			track.walls.vertexPositionData.push(currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 2
+			track.walls.vertexPositionData.push(-currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY + wallHeight);
+			track.walls.vertexPositionData.push(currentCoordZ + trackWidth);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			track.walls.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 3
+			track.walls.vertexPositionData.push(-currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY);
+			track.walls.vertexPositionData.push(currentCoordZ + trackWidth);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			track.walls.vertexTextureData.push(0.0);
+			index++;
+			
+			//Adding indices
+			track.walls.indexData.push(secondQuadIndex);
+			track.walls.indexData.push(secondQuadIndex+1);
+			track.walls.indexData.push(secondQuadIndex+2);
+			
+			track.walls.indexData.push(secondQuadIndex);
+			track.walls.indexData.push(secondQuadIndex+2);
+			track.walls.indexData.push(secondQuadIndex+3);
+			
+			var currentCoordZ = currentCoordZ + trackWidth;	
+		}
+		
+		/*
+			Inside wall vertices definition
+		*/
+		
+		currentCoordX = -(width/2.0);
+		currentCoordY = 0.0;
+		currentCoordZ = -(depth/2.0);
+		
+		while(currentCoordX < (-initialCoordX - trackWidth)) {			
+			var firstQuadIndex = index;
+			//Quad Vertex 0
+			track.walls.vertexPositionData.push(currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY);
+			track.walls.vertexPositionData.push(currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			index++;
+			//Quad Vertex 1
+			track.walls.vertexPositionData.push(currentCoordX + trackWidth);
+			track.walls.vertexPositionData.push(currentCoordY);
+			track.walls.vertexPositionData.push(currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			track.walls.vertexTextureData.push(0.0);
+			index++;
+			//Quad Vertex 2
+			track.walls.vertexPositionData.push(currentCoordX + trackWidth);
+			track.walls.vertexPositionData.push(currentCoordY + wallHeight);
+			track.walls.vertexPositionData.push(currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			track.walls.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 3
+			track.walls.vertexPositionData.push(currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY + wallHeight);
+			track.walls.vertexPositionData.push(currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			index++;
+			
+			//Adding indices
+			track.walls.indexData.push(firstQuadIndex);
+			track.walls.indexData.push(firstQuadIndex+1);
+			track.walls.indexData.push(firstQuadIndex+2);
+			
+			track.walls.indexData.push(firstQuadIndex);
+			track.walls.indexData.push(firstQuadIndex+2);
+			track.walls.indexData.push(firstQuadIndex+3);
+			
+			//Reflecting in -Z
+			var secondQuadIndex = index;
+			//Quad Vertex 0
+			track.walls.vertexPositionData.push(currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY);
+			track.walls.vertexPositionData.push(-currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			index++;
+			//Quad Vertex 1
+			track.walls.vertexPositionData.push(currentCoordX + trackWidth);
+			track.walls.vertexPositionData.push(currentCoordY);
+			track.walls.vertexPositionData.push(-currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			track.walls.vertexTextureData.push(0.0);
+			index++;
+			//Quad Vertex 2
+			track.walls.vertexPositionData.push(currentCoordX + trackWidth);
+			track.walls.vertexPositionData.push(currentCoordY + wallHeight);
+			track.walls.vertexPositionData.push(-currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			track.walls.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 3
+			track.walls.vertexPositionData.push(currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY + wallHeight);
+			track.walls.vertexPositionData.push(-currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			index++;
+			
+			//Adding indices
+			track.walls.indexData.push(secondQuadIndex);
+			track.walls.indexData.push(secondQuadIndex+1);
+			track.walls.indexData.push(secondQuadIndex+2);
+			
+			track.walls.indexData.push(secondQuadIndex);
+			track.walls.indexData.push(secondQuadIndex+2);
+			track.walls.indexData.push(secondQuadIndex+3);
+			
+			var currentCoordX = currentCoordX + trackWidth;	
+		}
+		
+		currentCoordX = -(width/2.0);
+		currentCoordY = 0.0;
+		currentCoordZ = -(depth/2.0);
+		
+		while(currentCoordZ < (-initialCoordZ - trackWidth)) {			
+			var firstQuadIndex = index;
+			//Quad Vertex 0
+			track.walls.vertexPositionData.push(currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY);
+			track.walls.vertexPositionData.push(currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			index++;
+			//Quad Vertex 1
+			track.walls.vertexPositionData.push(currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY + wallHeight);
+			track.walls.vertexPositionData.push(currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 2
+			track.walls.vertexPositionData.push(currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY + wallHeight);
+			track.walls.vertexPositionData.push(currentCoordZ + trackWidth);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			track.walls.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 3
+			track.walls.vertexPositionData.push(currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY);
+			track.walls.vertexPositionData.push(currentCoordZ + trackWidth);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			track.walls.vertexTextureData.push(0.0);
+			index++;
+			
+			//Adding indices
+			track.walls.indexData.push(firstQuadIndex);
+			track.walls.indexData.push(firstQuadIndex+1);
+			track.walls.indexData.push(firstQuadIndex+2);
+			
+			track.walls.indexData.push(firstQuadIndex);
+			track.walls.indexData.push(firstQuadIndex+2);
+			track.walls.indexData.push(firstQuadIndex+3);
+			
+			//Reflecting in -X
+			var secondQuadIndex = index;
+			//Quad Vertex 0
+			track.walls.vertexPositionData.push(-currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY);
+			track.walls.vertexPositionData.push(currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			index++;
+			//Quad Vertex 1
+			track.walls.vertexPositionData.push(-currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY + wallHeight);
+			track.walls.vertexPositionData.push(currentCoordZ);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 2
+			track.walls.vertexPositionData.push(-currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY + wallHeight);
+			track.walls.vertexPositionData.push(currentCoordZ + trackWidth);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			track.walls.vertexTextureData.push(1.0);
+			index++;
+			//Quad Vertex 3
+			track.walls.vertexPositionData.push(-currentCoordX);
+			track.walls.vertexPositionData.push(currentCoordY);
+			track.walls.vertexPositionData.push(currentCoordZ + trackWidth);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexNormalData.push(1.0);
+			track.walls.vertexNormalData.push(0.0);
+			track.walls.vertexTextureData.push(1.0);
+			track.walls.vertexTextureData.push(0.0);
+			index++;
+			
+			//Adding indices
+			track.walls.indexData.push(secondQuadIndex);
+			track.walls.indexData.push(secondQuadIndex+1);
+			track.walls.indexData.push(secondQuadIndex+2);
+			
+			track.walls.indexData.push(secondQuadIndex);
+			track.walls.indexData.push(secondQuadIndex+2);
+			track.walls.indexData.push(secondQuadIndex+3);
+			
+			var currentCoordZ = currentCoordZ + trackWidth;	
+		}
+	}
+	
+	initTrack(firstTrack);
+	
+	// Main Track buffers
+	firstTrack.mainTrack.vertexBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.mainTrack.vertexBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(firstTrack.mainTrack.vertexPositionData), gl.STATIC_DRAW);
+	
+	firstTrack.mainTrack.normalBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.mainTrack.normalBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(firstTrack.mainTrack.vertexNormalData), gl.STATIC_DRAW);
+	
+	firstTrack.mainTrack.textureBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.mainTrack.textureBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(firstTrack.mainTrack.vertexTextureData), gl.STATIC_DRAW);
+	
+	firstTrack.mainTrack.indexBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, firstTrack.mainTrack.indexBuffer);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(firstTrack.mainTrack.indexData), gl.STATIC_DRAW);
+	
+	// Walls buffers
+	firstTrack.walls.vertexBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.walls.vertexBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(firstTrack.walls.vertexPositionData), gl.STATIC_DRAW);
+	
+	firstTrack.walls.normalBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.walls.normalBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(firstTrack.walls.vertexNormalData), gl.STATIC_DRAW);
+	
+	firstTrack.walls.textureBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.walls.textureBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(firstTrack.walls.vertexTextureData), gl.STATIC_DRAW);
+	
+	firstTrack.walls.indexBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, firstTrack.walls.indexBuffer);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(firstTrack.walls.indexData), gl.STATIC_DRAW);
+	
+	//Finish line buffers
+	firstTrack.finishLine.vertexBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.finishLine.vertexBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(firstTrack.finishLine.vertexPositionData), gl.STATIC_DRAW);
+	
+	firstTrack.finishLine.normalBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.finishLine.normalBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(firstTrack.finishLine.vertexNormalData), gl.STATIC_DRAW);
+	
+	firstTrack.finishLine.textureBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.finishLine.textureBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(firstTrack.finishLine.vertexTextureData), gl.STATIC_DRAW);
+	
+	firstTrack.finishLine.indexBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, firstTrack.finishLine.indexBuffer);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(firstTrack.finishLine.indexData), gl.STATIC_DRAW);
+	//console.log(models.mario);
+	
+	
+	/*
+		Function for binding a texture and determinate the texture filter
+	*/
+	function handleLoadedTexture(texture) {
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		// Prevents s-coordinate wrapping (repeating).
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		// Prevents t-coordinate wrapping (repeating).
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        /*gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);*/
+        gl.bindTexture(gl.TEXTURE_2D, null);
+    }
+	
+	/*
+		Creating the texture
+	*/
+		
+		var asphaltTexture = gl.createTexture();
+        asphaltTexture.image = new Image();
+        asphaltTexture.image.onload = function () {
+            handleLoadedTexture(asphaltTexture)
+        }
+        asphaltTexture.image.src = "models/Pista/grey_asphalt.jpg";
+		
+		var wallBrickTexture = gl.createTexture();
+        wallBrickTexture.image = new Image();
+        wallBrickTexture.image.onload = function () {
+            handleLoadedTexture(wallBrickTexture)
+        }
+        wallBrickTexture.image.src = "models/Pista/brick_wall.jpg";
+		
+		var finishFlagTexture = gl.createTexture();
+        finishFlagTexture.image = new Image();
+        finishFlagTexture.image.onload = function () {
+            handleLoadedTexture(finishFlagTexture)
+        }
+        finishFlagTexture.image.src = "models/Pista/race_flag.jpg";
+	
+	function radToDeg(r) {
+    return r * 180 / Math.PI;
+  }
+
+  function degToRad(d) {
+    return d * Math.PI / 180;
+  }
+  
+    /*
+		Initialization of parameters for the draw function
+	*/
+    var projectionMatrix = makeIdentity();
+    var viewMatrix = makeIdentity();
+    var modelMatrix = makeIdentity();
+	
+	
+	var initialCamPos = [0,-1,-5];
+	var initialCamTarget = [0,-1,0];
+	
+	
+	
+	var lightDirection = [0,0,0];
+	
+    var ambientLight = [1,1,1,0];
+	var diffuseLight = [0,0,0,0];
+	var specularLight = [0,0,0,0];
+	var shininess = 180.0;
+	
+	var ambientMaterial = [1,1,1,0];
+	var diffuseMaterial = [0,0,0,0];
+	var specularMaterial = [0,0,0,0];
+	
+	var lighting = false;
+	
+	gl.clearColor(1.0, 1.0, 1.0, 1.0);
+	gl.clearDepth(1.0);
+	var time_old=0;
+	var angleToRotate=0;
+	
+	var xCamTranslate = 0.0;
+	var zCamTranslate = 0.0;
+	
+	 
+	 OBJ.initMeshBuffers(gl, models.mario);
+	 OBJ.initMeshBuffers(gl, models.peach);
+	 OBJ.initMeshBuffers(gl, models.luigi);
+	 OBJ.initMeshBuffers(gl, models.bowser);
+	 OBJ.initMeshBuffers(gl, models.box);
+	 OBJ.bindTextures(gl, models.mario);
+	 OBJ.bindTextures(gl, models.peach);
+	 OBJ.bindTextures(gl, models.luigi);
+	 OBJ.bindTextures(gl, models.bowser);
+	 OBJ.bindTextures(gl, models.box);
+	 
+	 //console.log(models.mario.groupTextures);
+	 //console.log(models.peach.groupTextures);
+	 //console.log(models.luigi.groupTextures);
+	 //console.log(models.track.groupTextures);
+	 //console.log(models.mario.vertexNormals);
+  /*
+		Our draw function
+  */
+  var drawAnimated=function(time) {
+
+		gl.viewport(0.0, 0.0, canvas.clientWidth, canvas.clientHeight);
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		
+		//Getting the inputs for lights
+		//getTextInput();
+		/*
+			Function that treats the behavior of the object according
+		to the pressed keys
+		*/
+		function handleKey() {
+			if (currentlyPressedKeys[87]) {
+				// W
+				zCamTranslate = zCamTranslate - 0.1;
+				//xTranslate = 0;
+			}
+			else
+			{
+				if (currentlyPressedKeys[83]) {
+					// S
+					zCamTranslate = zCamTranslate + 0.1;
+					//xTranslate = 0;
+				}
+				else
+				{
+					if (currentlyPressedKeys[65]) {
+						// A
+						xCamTranslate = xCamTranslate + 0.1;
+						//yTranslate = 0;
+					}
+					else
+					{
+						if (currentlyPressedKeys[68]) {
+							// D
+							xCamTranslate = xCamTranslate - 0.1;
+							//yTranslate = 0;
+						}
+					}
+				}
+			}
+		
+		}
+		// Handling the keyboard
+		handleKey();
+		
+		var currentCamPosition = [0,0,0];
+		var currentCamTarget = [0,0,0]
+		currentCamPosition[0] = initialCamPos[0] + xCamTranslate;
+		currentCamPosition[1] = initialCamPos[1];
+		currentCamPosition[2] = initialCamPos[2] - zCamTranslate;
+		currentCamTarget[0] = initialCamTarget[0] + xCamTranslate;
+		currentCamTarget[1] = initialCamTarget[1];
+		currentCamTarget[2] = initialCamTarget[2] - zCamTranslate;
+		// Definition of our projection and camera matrix and sending to the vertex shader
+		projectionMatrix = makePerspective(degToRad(60), 
+				  canvas.clientWidth / canvas.clientHeight, 1, 2000);
+		gl.uniformMatrix4fv(projectionLocation, false, projectionMatrix);
+		
+		//console.log(currentCamPosition);
+		// Definition of our camera matrix
+		viewMatrix = makeLookAt(
+		  currentCamPosition, //Camera position
+		  currentCamTarget, //Target
+		  [0,1,0] //Up Vector
+		);
+		
+		// Rotation of the object
+		var dt=time-time_old;
+		modelMatrix = makeIdentity();
+		angleToRotate+=dt*0.0009;
+		modelMatrix = matrixMultiply(modelMatrix, makeYRotation(angleToRotate));
+		time_old = time;
+		
+		
+		// Multiplying model and camera matrix to send to the vertex buffer
+		//var modelView = matrixMultiply(modelMatrix,viewMatrix);
+		var modelView = matrixMultiply(modelMatrix,viewMatrix);
+		gl.uniformMatrix4fv(modelViewLocation, false, modelView);
+		
+		//  Sending the normal matrix to the vertex shader (since we are transforming our vertex,
+		// the normals need to transform together, but maintaining perpendicularity with the triangle)
+		// Explanation of this matrix too advanced to our context, but if you want to understand better,
+		// read this article: http://www.lighthouse3d.com/tutorials/glsl-12-tutorial/the-normal-matrix/
+		var normalMatrix = makeTranspose(makeInverse(modelView));
+		gl.uniformMatrix4fv(normalMatrixLocation, false, normalMatrix);
+		
+		/*
+			Sending light values to the shaders
+		*/
+		gl.uniform1i(useLightLocation, lighting);
+		
+		gl.uniform3fv(lightDirectionLocation, lightDirection);
+		
+		gl.uniform4fv(ambientLightLocation, ambientLight);
+		gl.uniform4fv(diffuseLightLocation, diffuseLight);
+		gl.uniform4fv(specularLightLocation, specularLight);
+		gl.uniform1f(shininessLocation, shininess);
+		
+		gl.uniform4fv(ambientMaterialLocation, ambientMaterial);
+		gl.uniform4fv(diffuseMaterialLocation, diffuseMaterial);
+		gl.uniform4fv(specularMaterialLocation, specularMaterial);
+		
+		/*
+			Sending the buffers to the shaders
+		*/
+		/*
+			Drawing Mario model
+		*/
+		gl.bindBuffer(gl.ARRAY_BUFFER, models.mario.vertexBuffer);
+		gl.vertexAttribPointer(positionLocation, models.mario.vertexBuffer.itemSize, gl.FLOAT, false, 0,0);
+		
+		if(!models.mario.textures.length){
+			gl.disableVertexAttribArray(textureLocation);
+		}
+		else{
+			gl.enableVertexAttribArray(textureLocation);
+			gl.bindBuffer(gl.ARRAY_BUFFER, models.mario.textureBuffer);
+			gl.vertexAttribPointer(textureLocation, models.mario.textureBuffer.itemSize, gl.FLOAT, false, 0,0);
+		}
+		
+		if(!models.mario.vertexNormals.length){
+			gl.disableVertexAttribArray(vertexNormalLocation);
+		}
+		else{
+			gl.enableVertexAttribArray(vertexNormalLocation);
+			gl.bindBuffer(gl.ARRAY_BUFFER, models.mario.normalBuffer);
+			gl.vertexAttribPointer(vertexNormalLocation, models.mario.normalBuffer.itemSize, gl.FLOAT, false, 0,0);
+		}
+		
+		for (var item of models.mario.groupIndices) {
+			var currentTexture = models.mario.groupTextures.get(item[0]);
+			//console.log(currentTexture);
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D, currentTexture);
+			gl.uniform1i(samplerLocation, 0);
+			
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.mario.indexBuffer);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(item[1]), gl.STATIC_DRAW);
+			gl.drawElements(gl.TRIANGLES, item[1].length, gl.UNSIGNED_SHORT, 0);
+		}
+		
+		/*
+			Matrix transformation for Peach
+		*/
+		modelMatrix = makeIdentity();
+		modelMatrix = matrixMultiply(modelMatrix, makeYRotation(angleToRotate));
+		modelMatrix = matrixMultiply(modelMatrix, makeTranslation(2.0,0,0));
+		
+		modelView = matrixMultiply(modelMatrix,viewMatrix);
+		gl.uniformMatrix4fv(modelViewLocation, false, modelView);
+		
+		normalMatrix = makeTranspose(makeInverse(modelView));
+		gl.uniformMatrix4fv(normalMatrixLocation, false, normalMatrix);
+		/*
+			Drawing Peach
+		*/	
+		gl.bindBuffer(gl.ARRAY_BUFFER, models.peach.vertexBuffer);
+		gl.vertexAttribPointer(positionLocation, models.peach.vertexBuffer.itemSize, gl.FLOAT, false, 0,0);
+		
+		if(!models.peach.textures.length){
+			gl.disableVertexAttribArray(textureLocation);
+		}
+		else{
+			gl.enableVertexAttribArray(textureLocation);
+			gl.bindBuffer(gl.ARRAY_BUFFER, models.peach.textureBuffer);
+			gl.vertexAttribPointer(textureLocation, models.peach.textureBuffer.itemSize, gl.FLOAT, false, 0,0);
+		}
+		
+		if(!models.peach.vertexNormals.length){
+			gl.disableVertexAttribArray(vertexNormalLocation);
+		}
+		else{
+			gl.enableVertexAttribArray(vertexNormalLocation);
+			gl.bindBuffer(gl.ARRAY_BUFFER, models.peach.normalBuffer);
+			gl.vertexAttribPointer(vertexNormalLocation, models.peach.normalBuffer.itemSize, gl.FLOAT, false, 0,0);
+		}
+				
+		for (var item of models.peach.groupIndices) {
+			var currentTexture = models.peach.groupTextures.get(item[0]);
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D, currentTexture);
+			gl.uniform1i(samplerLocation, 0);
+		
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.peach.indexBuffer);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(item[1]), gl.STATIC_DRAW);
+			gl.drawElements(gl.TRIANGLES, item[1].length, gl.UNSIGNED_SHORT, 0);
+			//console.log(key + " = " + value);
+		}
+		
+		/*
+			Matrix transformation for Luigi
+		*/
+		modelMatrix = makeIdentity();
+		modelMatrix = matrixMultiply(modelMatrix, makeYRotation(angleToRotate));
+		modelMatrix = matrixMultiply(modelMatrix, makeTranslation(-2.0,0,0));
+		
+		modelView = matrixMultiply(modelMatrix,viewMatrix);
+		gl.uniformMatrix4fv(modelViewLocation, false, modelView);
+		
+		normalMatrix = makeTranspose(makeInverse(modelView));
+		gl.uniformMatrix4fv(normalMatrixLocation, false, normalMatrix);
+		
+		/*
+			Drawing Luigi
+		*/
+		gl.bindBuffer(gl.ARRAY_BUFFER, models.luigi.vertexBuffer);
+		gl.vertexAttribPointer(positionLocation, models.luigi.vertexBuffer.itemSize, gl.FLOAT, false, 0,0);
+		
+		if(!models.luigi.textures.length){
+			gl.disableVertexAttribArray(textureLocation);
+		}
+		else{
+			gl.enableVertexAttribArray(textureLocation);
+			gl.bindBuffer(gl.ARRAY_BUFFER, models.luigi.textureBuffer);
+			gl.vertexAttribPointer(textureLocation, models.luigi.textureBuffer.itemSize, gl.FLOAT, false, 0,0);
+		}
+		
+		if(!models.luigi.vertexNormals.length){
+			gl.disableVertexAttribArray(vertexNormalLocation);
+		}
+		else{
+			gl.enableVertexAttribArray(vertexNormalLocation);
+			gl.bindBuffer(gl.ARRAY_BUFFER, models.luigi.normalBuffer);
+			gl.vertexAttribPointer(vertexNormalLocation, models.luigi.normalBuffer.itemSize, gl.FLOAT, false, 0,0);
+		}
+				
+		for (var item of models.luigi.groupIndices) {
+			var currentTexture = models.luigi.groupTextures.get(item[0]);
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D, currentTexture);
+			gl.uniform1i(samplerLocation, 0);
+		
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.luigi.indexBuffer);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(item[1]), gl.STATIC_DRAW);
+			gl.drawElements(gl.TRIANGLES, item[1].length, gl.UNSIGNED_SHORT, 0);
+			//console.log(key + " = " + value);
+		}
+		
+		/*
+			Matrix transformation for track
+		*/
+		modelMatrix = makeIdentity();
+		//modelMatrix = matrixMultiply(modelMatrix, makeYRotation(angleToRotate));
+		
+		modelView = matrixMultiply(modelMatrix,viewMatrix);
+		gl.uniformMatrix4fv(modelViewLocation, false, modelView);
+		
+		normalMatrix = makeTranspose(makeInverse(modelView));
+		gl.uniformMatrix4fv(normalMatrixLocation, false, normalMatrix);
+		
+		/*
+			Drawing track
+		*/
+		// Asphalt
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, asphaltTexture);
+		gl.uniform1i(samplerLocation, 0);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.mainTrack.vertexBuffer);
+		gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0,0);
+		gl.enableVertexAttribArray(positionLocation);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.mainTrack.textureBuffer);
+		gl.vertexAttribPointer(textureLocation, 2, gl.FLOAT, false, 0,0);
+		gl.enableVertexAttribArray(textureLocation);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.mainTrack.normalBuffer);
+		gl.vertexAttribPointer(vertexNormalLocation, 3, gl.FLOAT, false, 0,0);
+		gl.enableVertexAttribArray(vertexNormalLocation);	
+		
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, firstTrack.mainTrack.indexBuffer);
+		gl.drawElements(gl.TRIANGLES, firstTrack.mainTrack.indexData.length, gl.UNSIGNED_SHORT, 0);
+		
+		// Walls
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, wallBrickTexture);
+		gl.uniform1i(samplerLocation, 0);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.walls.vertexBuffer);
+		gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0,0);
+		gl.enableVertexAttribArray(positionLocation);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.walls.textureBuffer);
+		gl.vertexAttribPointer(textureLocation, 2, gl.FLOAT, false, 0,0);
+		gl.enableVertexAttribArray(textureLocation);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.walls.normalBuffer);
+		gl.vertexAttribPointer(vertexNormalLocation, 3, gl.FLOAT, false, 0,0);
+		gl.enableVertexAttribArray(vertexNormalLocation);	
+		
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, firstTrack.walls.indexBuffer);
+		gl.drawElements(gl.TRIANGLES, firstTrack.walls.indexData.length, gl.UNSIGNED_SHORT, 0);
+		
+		// Finish line
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, finishFlagTexture);
+		gl.uniform1i(samplerLocation, 0);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.finishLine.vertexBuffer);
+		gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0,0);
+		gl.enableVertexAttribArray(positionLocation);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.finishLine.textureBuffer);
+		gl.vertexAttribPointer(textureLocation, 2, gl.FLOAT, false, 0,0);
+		gl.enableVertexAttribArray(textureLocation);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, firstTrack.finishLine.normalBuffer);
+		gl.vertexAttribPointer(vertexNormalLocation, 3, gl.FLOAT, false, 0,0);
+		gl.enableVertexAttribArray(vertexNormalLocation);	
+		
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, firstTrack.finishLine.indexBuffer);
+		gl.drawElements(gl.TRIANGLES, firstTrack.finishLine.indexData.length, gl.UNSIGNED_SHORT, 0);
+			
+		/*
+			Matrix transformation for box
+		*/
+		
+		modelMatrix = makeIdentity();
+		modelMatrix = matrixMultiply(modelMatrix, makeScale(0.25,0.25,0.25));
+		modelMatrix = matrixMultiply(modelMatrix, makeYRotation(angleToRotate));
+		modelMatrix = matrixMultiply(modelMatrix, makeTranslation(0,2,0));
+		
+		modelView = matrixMultiply(modelMatrix,viewMatrix);
+		gl.uniformMatrix4fv(modelViewLocation, false, modelView);
+		
+		normalMatrix = makeTranspose(makeInverse(modelView));
+		gl.uniformMatrix4fv(normalMatrixLocation, false, normalMatrix);
+		/*
+			Drawing box
+		*/
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, models.box.vertexBuffer);
+		gl.vertexAttribPointer(positionLocation, models.box.vertexBuffer.itemSize, gl.FLOAT, false, 0,0);
+		
+		if(!models.box.textures.length){
+			gl.disableVertexAttribArray(textureLocation);
+		}
+		else{
+			gl.enableVertexAttribArray(textureLocation);
+			gl.bindBuffer(gl.ARRAY_BUFFER, models.box.textureBuffer);
+			gl.vertexAttribPointer(textureLocation, models.box.textureBuffer.itemSize, gl.FLOAT, false, 0,0);
+		}
+		
+		if(!models.box.vertexNormals.length){
+			gl.disableVertexAttribArray(vertexNormalLocation);
+		}
+		else{
+			gl.enableVertexAttribArray(vertexNormalLocation);
+			gl.bindBuffer(gl.ARRAY_BUFFER, models.box.normalBuffer);
+			gl.vertexAttribPointer(vertexNormalLocation, models.box.normalBuffer.itemSize, gl.FLOAT, false, 0,0);
+		}
+				
+		for (var item of models.box.groupIndices) {
+			var currentTexture = models.box.groupTextures.get(item[0]);
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D, currentTexture);
+			gl.uniform1i(samplerLocation, 0);
+		
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.box.indexBuffer);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(item[1]), gl.STATIC_DRAW);
+			gl.drawElements(gl.TRIANGLES, item[1].length, gl.UNSIGNED_SHORT, 0);
+			//console.log(key + " = " + value);
+		}
+		
+		/*
+			Matrix transformation for bowser
+		*/
+		
+		modelMatrix = makeIdentity();
+		modelMatrix = matrixMultiply(modelMatrix, makeYRotation(angleToRotate));
+		modelMatrix = matrixMultiply(modelMatrix, makeTranslation(2,2,0));
+		
+		modelView = matrixMultiply(modelMatrix,viewMatrix);
+		gl.uniformMatrix4fv(modelViewLocation, false, modelView);
+		
+		normalMatrix = makeTranspose(makeInverse(modelView));
+		gl.uniformMatrix4fv(normalMatrixLocation, false, normalMatrix);
+		/*
+			Drawing Bowser
+		*/
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, models.bowser.vertexBuffer);
+		gl.vertexAttribPointer(positionLocation, models.bowser.vertexBuffer.itemSize, gl.FLOAT, false, 0,0);
+		
+		if(!models.bowser.textures.length){
+			gl.disableVertexAttribArray(textureLocation);
+		}
+		else{
+			gl.enableVertexAttribArray(textureLocation);
+			gl.bindBuffer(gl.ARRAY_BUFFER, models.bowser.textureBuffer);
+			gl.vertexAttribPointer(textureLocation, models.bowser.textureBuffer.itemSize, gl.FLOAT, false, 0,0);
+		}
+		
+		if(!models.bowser.vertexNormals.length){
+			gl.disableVertexAttribArray(vertexNormalLocation);
+		}
+		else{
+			gl.enableVertexAttribArray(vertexNormalLocation);
+			gl.bindBuffer(gl.ARRAY_BUFFER, models.bowser.normalBuffer);
+			gl.vertexAttribPointer(vertexNormalLocation, models.bowser.normalBuffer.itemSize, gl.FLOAT, false, 0,0);
+		}
+				
+		for (var item of models.bowser.groupIndices) {
+			var currentTexture = models.bowser.groupTextures.get(item[0]);
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D, currentTexture);
+			gl.uniform1i(samplerLocation, 0);
+		
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.bowser.indexBuffer);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(item[1]), gl.STATIC_DRAW);
+			gl.drawElements(gl.TRIANGLES, item[1].length, gl.UNSIGNED_SHORT, 0);
+			//console.log(key + " = " + value);
+		}
+		
+		
+		window.requestAnimationFrame(drawAnimated);
+  }
+  drawAnimated(0);
+  
+}
+
+window.onload = function(){
+	OBJ.downloadMeshes({
+		'mario': 'models/Mario/mk_kart.obj',
+		'peach': 'models/Peach/pk_kart.obj',
+		'luigi': 'models/Luigi/luigi.obj',
+		'bowser': 'models/Bowser/kk_kart.obj',
+		'box': 'models/Caixa/qmark.obj'
+	}, webGLStart);
+}
+</script>
+</head>
+<body>
+		<h4>Exemplo 5 WebGL</h4>
+		<div id="section">
+			<canvas id="aCanvas" style="border: none;" width="500" height="500" align="center"></canvas>
+			<h3>Comandos:</h3>
+			<p>W - Movimenta a câmera para frente</p>
+			<p>S - Movimenta a câmera para trás</p>
+			<p>A - Movimenta a câmera para esquerda</p>
+			<p>D - Movimenta a câmera para direita</p>
+		</div>
+
+</body></html>

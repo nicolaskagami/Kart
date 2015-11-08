@@ -2,10 +2,11 @@
 
 <head>
 <title>Bruno Karttelan</title>
-<script src="jquery-1.11.3.js"></script>
-<script src="webgl-utils.js"></script>
-<script src="webgl-3d-math.js"></script>
-<script src="webgl-obj-loader.js"></script>
+<script src="./src/movable_object.js"></script>
+<script src="./src/jquery-1.11.3.js"></script>
+<script src="./src/webgl-utils.js"></script>
+<script src="./src/webgl-3d-math.js"></script>
+<script src="./src/webgl-obj-loader.js"></script>
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 <script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
@@ -44,7 +45,6 @@
 
     varying vec2 vTextureCoord;
 	varying vec4 vLightResult;
-
 
     void main(void) {
 	
@@ -132,8 +132,12 @@
     var viewMatrix;
     var modelMatrix;
     
-    var camPos;
-    var camTarget;
+	//Variáveis de Camera	
+	var currentCamPosition;
+	var currentCamTarget;
+	
+	var xCamTranslate;
+	var zCamTranslate;
     
     var lightDirection;
     
@@ -150,8 +154,11 @@
     var time_old;
     var angleToRotate;
     
-    //Variáveis NEHE
-    var neheTexture;
+	
+	//Variáveis de pista
+	var squareVertexPositionBuffer; //quadrado
+	var currentMarioPosition = {};
+	var players = [];
 
 	//Variáveis de input
 	var currentlyPressedKeys = {};
@@ -210,35 +217,44 @@
 
     function initModels(meshes){
         models=meshes;
+		players.push(new MovableObject(1,0,3,models.mario));
+
     }
     
     function handleLoadedTexture(texture) {
-        gl.bindTexture(gl.TEXTURE_2D, texture);
+		//Old
+		/*gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.bindTexture(gl.TEXTURE_2D, null);*/
+		
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		// Prevents s-coordinate wrapping (repeating).
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		// Prevents t-coordinate wrapping (repeating).
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        /*gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);*/
         gl.bindTexture(gl.TEXTURE_2D, null);
     }    
     
     function initTexture(){
-        neheTexture = gl.createTexture();
-        neheTexture.image = new Image();
-        neheTexture.image.onload = function () {
-            handleLoadedTexture(neheTexture)
-        }
-        //neheTexture.image.crossOrigin = "Anonymous";
-        neheTexture.image.src = "modelText.jpg";
     }
 
     function initDrawingParameters(){
         projectionMatrix = makeIdentity();
         viewMatrix = makeIdentity();
         modelMatrix = makeIdentity();
-        
-        camPos = [0,0,-4];
-        camTarget = [0,0,0];
-        
+		
+        currentCamPosition = [0,-1,-2.2];
+        currentCamTarget = [0,-1,0];
+		
+        currentMarioPosition = [0,0,0];
         lightDirection = [0,0,0];
         
         ambientLight = [1,1,1,0];
@@ -252,18 +268,42 @@
         
         lighting = false;
         
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clearColor(1.0, 1.0, 1.0, 1.0);
         gl.clearDepth(1.0);
         time_old=0;
         angleToRotate=0;
     
+		xCamTranslate = 0.0;
+		zCamTranslate = 0.0;
+		
         OBJ.initMeshBuffers(gl, models.mario);
-        OBJ.initMeshBuffers(gl, models.track);
+		OBJ.initMeshBuffers(gl, models.peach);
+		OBJ.initMeshBuffers(gl, models.luigi);
+		OBJ.initMeshBuffers(gl, models.bowser);
+		OBJ.initMeshBuffers(gl, models.box);
+		OBJ.bindTextures(gl, models.mario);
+		OBJ.bindTextures(gl, models.peach);
+		OBJ.bindTextures(gl, models.luigi);
+		OBJ.bindTextures(gl, models.bowser);
+		OBJ.bindTextures(gl, models.box);
     }
+	function initTrack() {
+		squareVertexPositionBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
+		vertices = [
+			 10.0,  0.0,  10.0,
+			-10.0,  0.0,  10.0,
+			 10.0, 0.0,  -10.0,
+			-10.0, 0.0,  -10.0
+		];
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+		squareVertexPositionBuffer.itemSize = 3;
+		squareVertexPositionBuffer.numItems = 4;
+	}
     
     function setMatrixUniforms() {
-        gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
-        gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
+        //gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
+        //gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
     }
     
 	function init(meshes) {
@@ -271,6 +311,7 @@
         initGL(canvas);
         initShaders();
         initModels(meshes);
+		initTrack();
         initTexture();
         initDrawingParameters();
 
@@ -293,33 +334,49 @@
 	function handleKey() {
 		if (currentlyPressedKeys[87]) {
             // W
-			time+=1;
+			//time+=1;
+			zCamTranslate = - 0.1;
 			//xTranslate = 0;
-        }
+        } else
 		if (currentlyPressedKeys[83]) {
 			// S
-			time-=1;
+			//time-=1;
+			zCamTranslate = 0.1;
 			//xTranslate = 0;
-		}				
+		} else {
+			zCamTranslate = 0.0;
+		}
 		if (currentlyPressedKeys[65]) {
 			// A
-			time+=10;
+			//time+=10;
+			xCamTranslate = 0.1;
 			//yTranslate = 0;
-		}
+		} else
 		if (currentlyPressedKeys[68]) {
 			// D
-			time-=10;
+			//time-=10;
+			xCamTranslate = - 0.1;
 			//yTranslate = 0;
+		} else {
+			xCamTranslate = 0.0;
+		}
+		if (currentlyPressedKeys[69]) {
+			mairo.move();
+		}
+		if (currentlyPressedKeys[81]) {
+			mairo.setVelocity(0.01,0,0);
 		}
 		if (currentlyPressedKeys[67]) {
 			// C
 			//Camera +
-			camPos[1]+=1;
+			//angleToRotate+=0.1;
+			mairo.turn(0.1);
 		}
 		if (currentlyPressedKeys[86]) {
 			//V
 			//Camera -
-			camPos[1]-=1;
+			//angleToRotate-=0.1;
+			mairo.turn(-0.1);
 		}
 
 	}
@@ -334,7 +391,18 @@
         gl.viewport(0.0, 0.0, canvas.clientWidth, canvas.clientHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         
-        
+        currentCamPosition[0] = currentCamPosition[0] + xCamTranslate;
+		currentCamPosition[1] = -1;
+		currentCamPosition[2] = currentCamPosition[2] - zCamTranslate;
+		
+		currentCamTarget[0] = currentCamTarget[0] + xCamTranslate;
+		currentCamTarget[1] = -1;
+		currentCamTarget[2] = currentCamTarget[2] - zCamTranslate;
+		
+		currentMarioPosition[0] = currentMarioPosition[0] + xCamTranslate;
+		//currentMarioPosition[1] = -1
+		currentMarioPosition[2] = currentMarioPosition[2] - zCamTranslate;
+		
         // Definition of our projection and camera matrix and sending to the vertex shader
         projectionMatrix = makePerspective(degToRad(60), 
                   canvas.clientWidth / canvas.clientHeight, 1, 2000);
@@ -342,19 +410,19 @@
         
         // Definition of our camera matrix
         viewMatrix = makeLookAt(
-          camPos, //Camera position
-          camTarget, //Target
+          currentCamPosition, //Camera position
+          currentCamTarget, //Target
           [0,1,0] //Up Vector
         );
         
         // Rotation of the object
         var dt=time-time_old;
         modelMatrix = makeIdentity();
-        angleToRotate+=dt*0.002;
+        angleToRotate+=dt*0.0009;
         //modelMatrix = matrixMultiply(modelMatrix, makeYRotation(angleToRotate));
         time_old = time;
 		
-		viewMatrix= matrixMultiply(viewMatrix, makeYRotation(angleToRotate));
+		//viewMatrix= matrixMultiply(viewMatrix, makeYRotation(angleToRotate));
         
         
         // Multiplying model and camera matrix to send to the vertex buffer
@@ -387,68 +455,59 @@
         /*
             Sending the buffers to the shaders
         */
-        /*
-            Drawing Mario model
-        */
-        gl.bindBuffer(gl.ARRAY_BUFFER, models.mario.vertexBuffer);
-        gl.vertexAttribPointer(positionLocation, models.mario.vertexBuffer.itemSize, gl.FLOAT, false, 0,0);
-        
-        if(!models.mario.textures.length){
-            gl.disableVertexAttribArray(textureLocation);
+		gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
+        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        setMatrixUniforms();
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
+		/*
+		//Mario Translation
+		modelMatrix = makeIdentity();
+		modelMatrix = matrixMultiply(modelMatrix, makeYRotation(angleToRotate));
+		modelMatrix = matrixMultiply(modelMatrix, makeTranslation(currentMarioPosition[0],currentMarioPosition[1],currentMarioPosition[2]));
+		
+		modelView = matrixMultiply(modelMatrix,viewMatrix);
+		gl.uniformMatrix4fv(modelViewLocation, false, modelView);
+		
+		normalMatrix = makeTranspose(makeInverse(modelView));
+		gl.uniformMatrix4fv(normalMatrixLocation, false, normalMatrix);
+		//Drawing Mario
+		gl.bindBuffer(gl.ARRAY_BUFFER, models.mario.vertexBuffer);
+		gl.vertexAttribPointer(positionLocation, models.mario.vertexBuffer.itemSize, gl.FLOAT, false, 0,0);
+		
+		if(!models.mario.textures.length){
+			gl.disableVertexAttribArray(textureLocation);
+		}
+		else{
+			gl.enableVertexAttribArray(textureLocation);
+			gl.bindBuffer(gl.ARRAY_BUFFER, models.mario.textureBuffer);
+			gl.vertexAttribPointer(textureLocation, models.mario.textureBuffer.itemSize, gl.FLOAT, false, 0,0);
+		}
+		
+		if(!models.mario.vertexNormals.length){
+			gl.disableVertexAttribArray(vertexNormalLocation);
+		}
+		else{
+			gl.enableVertexAttribArray(vertexNormalLocation);
+			gl.bindBuffer(gl.ARRAY_BUFFER, models.mario.normalBuffer);
+			gl.vertexAttribPointer(vertexNormalLocation, models.mario.normalBuffer.itemSize, gl.FLOAT, false, 0,0);
+		}
+		
+		for (var item of models.mario.groupIndices) {
+			var currentTexture = models.mario.groupTextures.get(item[0]);
+			//console.log(currentTexture);
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D, currentTexture);
+			gl.uniform1i(samplerLocation, 0);
+			
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.mario.indexBuffer);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(item[1]), gl.STATIC_DRAW);
+			gl.drawElements(gl.TRIANGLES, item[1].length, gl.UNSIGNED_SHORT, 0);
+		}*/
+		
+		for(var i=0;i<players.length;i++)
+        {
+            players[i].draw();
         }
-        else{
-            gl.enableVertexAttribArray(textureLocation);
-            gl.bindBuffer(gl.ARRAY_BUFFER, models.mario.textureBuffer);
-            gl.vertexAttribPointer(textureLocation, models.mario.textureBuffer.itemSize, gl.FLOAT, false, 0,0);
-        }
-        
-        if(!models.mario.vertexNormals.length){
-            gl.disableVertexAttribArray(vertexNormalLocation);
-        }
-        else{
-            gl.enableVertexAttribArray(vertexNormalLocation);
-            gl.bindBuffer(gl.ARRAY_BUFFER, models.mario.normalBuffer);
-            gl.vertexAttribPointer(vertexNormalLocation, models.mario.normalBuffer.itemSize, gl.FLOAT, false, 0,0);
-        }
-
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, neheTexture);
-        gl.uniform1i(samplerLocation, 0);
-        
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.mario.indexBuffer);
-        gl.drawElements(gl.TRIANGLES, models.mario.indices.length, gl.UNSIGNED_SHORT, 0);
-        
-        /*
-            Drawing the track
-        */    
-        gl.bindBuffer(gl.ARRAY_BUFFER, models.track.vertexBuffer);
-        gl.vertexAttribPointer(positionLocation, models.track.vertexBuffer.itemSize, gl.FLOAT, false, 0,0);
-        
-        if(!models.track.textures.length){
-            gl.disableVertexAttribArray(textureLocation);
-        }
-        else{
-            gl.enableVertexAttribArray(textureLocation);
-            gl.bindBuffer(gl.ARRAY_BUFFER, models.track.textureBuffer);
-            gl.vertexAttribPointer(textureLocation, models.track.textureBuffer.itemSize, gl.FLOAT, false, 0,0);
-        }
-        
-        if(!models.track.vertexNormals.length){
-            gl.disableVertexAttribArray(vertexNormalLocation);
-        }
-        else{
-            gl.enableVertexAttribArray(vertexNormalLocation);
-            gl.bindBuffer(gl.ARRAY_BUFFER, models.track.normalBuffer);
-            gl.vertexAttribPointer(vertexNormalLocation, models.track.normalBuffer.itemSize, gl.FLOAT, false, 0,0);
-        }
-
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, neheTexture);
-        gl.uniform1i(samplerLocation, 0);
-        
-
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.track.indexBuffer);
-        gl.drawElements(gl.TRIANGLES, models.track.indices.length, gl.UNSIGNED_SHORT, 0);
         
     
     }
@@ -468,8 +527,11 @@
 
     window.onload = function(){
         OBJ.downloadMeshes({
-            'mario': 'models/Mario/mk_kart.obj',
-            'track': 'models/Pista/raceway_mariokart.obj'
+			'mario': 'models/Mario/mk_kart.obj',
+			'peach': 'models/Peach/pk_kart.obj',
+			'luigi': 'models/Luigi/luigi.obj',
+			'bowser': 'models/Bowser/kk_kart.obj',
+			'box': 'models/Caixa/qmark.obj'
     }, init);
 }
 </script>
