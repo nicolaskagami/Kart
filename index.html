@@ -2,6 +2,8 @@
 
 <head>
 <title>Bruno Karttelan</title>
+<script src="./src/drawable.js"></script>
+<script src="./src/collidables.js"></script>
 <script src="./src/movable_object.js"></script>
 <script src="./src/jquery-1.11.3.js"></script>
 <script src="./src/webgl-utils.js"></script>
@@ -225,10 +227,15 @@
 
     }
 	function initPlayers(){
-		players.push(new MovableObject(1,0,3,models.mario));
+		players.push(new MovableObject(1,0,0,models.mario));
+		players.push(new MovableObject(3,0,0,models.bowser));
+		players.push(new MovableObject(5,0,0,models.peach));
+		//players[0].setCollisionCircle(0,1,0,1);
 	}
 	function initObjects(){
-		//players.push(new MovableObject(3,0,3,models.box));
+		players.push(new MovableObject(3,0,3,models.box));
+		players[3].setCollisionRectangle(0,1,2,3);
+		
 		//players.push(new MovableObject(3,0,6,models.box));
 		//players.push(new MovableObject(3,0,9,models.box));
 	}
@@ -285,12 +292,12 @@
 		OBJ.initMeshBuffers(gl, models.peach);
 		OBJ.initMeshBuffers(gl, models.luigi);
 		OBJ.initMeshBuffers(gl, models.bowser);
-		//OBJ.initMeshBuffers(gl, models.box);
+		OBJ.initMeshBuffers(gl, models.box);
 		OBJ.bindTextures(gl, models.mario);
 		OBJ.bindTextures(gl, models.peach);
 		OBJ.bindTextures(gl, models.luigi);
 		OBJ.bindTextures(gl, models.bowser);
-		//OBJ.bindTextures(gl, models.box);
+		OBJ.bindTextures(gl, models.box);
     }
 	function initTrack() {
 		squareVertexPositionBuffer = gl.createBuffer();
@@ -343,39 +350,23 @@
             // W
 			//time+=1;
 			//zCamTranslate = - 0.1;
-			currentCamPosition[1] -=0.1;
+			players[0].move();
 			//currentCamTarget[2] -=0.1;
 			//xTranslate = 0;
         } else
 		if (currentlyPressedKeys[83]) {
 			// S
-			//time-=1;
-			//zCamTranslate = 0.1;
-			currentCamPosition[1] +=0.1;
-			
-			//currentCamTarget[2] +=0.1;
-			//xTranslate = 0;
-		} else {
-			zCamTranslate = 0.0;
+			players[0].backup();
 		}
 		if (currentlyPressedKeys[65]) {
 			// A
-			//time+=10;
-			currentCamPosition[0] +=0.1;
-			
-			currentCamTarget[0] +=0.1;
-			//yTranslate = 0;
+			players[0].turn(0.1);
 		} else
 		if (currentlyPressedKeys[68]) {
 			// D
-			//time-=10;
-			currentCamPosition[0] -=0.1;
-			
-			currentCamTarget[0] -=0.1;
-			//yTranslate = 0;
-		} else {
-			xCamTranslate = 0.0;
+			players[0].turn(-0.1);
 		}
+		
 		if (currentlyPressedKeys[69]) {
 			players[0].move();
 		}
@@ -384,7 +375,7 @@
 		}
 		if (currentlyPressedKeys[67]) {
 			// C
-			players[0].turn(0.1);
+			
 		}
 		if (currentlyPressedKeys[86]) {
 			//V
@@ -484,7 +475,7 @@
         //setMatrixUniforms();
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
 		
-		        for(var i=0;i<players.length;i++)
+		for(var i=0;i<players.length;i++)
         {
             players[i].draw();
         }
