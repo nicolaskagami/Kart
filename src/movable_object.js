@@ -1,25 +1,26 @@
 var MovableObject = function(x,y,z,model)
 {
 	this.position = [x,y,z];
-	this.velocity = [0,0,0]; //Needs to be consistent with the angle
+	this.speed = 0.1; 
 	this.angle = 0;
+	this.direction = [0,0,1];
 	this.model = model;
 }
 MovableObject.prototype =
 {
-	setVelocity: function(x,y,z)
-	{
-		this.velocity = [x,y,z];
-	},
 	move: function()
 	{
-		this.position[0] += this.velocity[0];
-		this.position[1] += this.velocity[1];
-		this.position[2] += this.velocity[2];
+		//this.position[1] = 2
+		this.position[0] += this.speed*this.direction[0];
+		this.position[1] += this.speed*this.direction[1];
+		this.position[2] += this.speed*this.direction[2];
 	},
 	turn: function(angle)
 	{
 		this.angle +=angle;
+		this.direction[0] = Math.sin(this.angle);
+		this.direction[2] = Math.cos(this.angle);
+		//this.setVelocity(
 	},
 	draw: function()
 	{
@@ -31,7 +32,7 @@ MovableObject.prototype =
 		modelView = matrixMultiply(modelMatrix,viewMatrix);
 		gl.uniformMatrix4fv(modelViewLocation, false, modelView);
 		
-		normalMatrix = makeTranspose(makeInverse(modelView));
+		var normalMatrix = makeTranspose(makeInverse(modelView));
 		gl.uniformMatrix4fv(normalMatrixLocation, false, normalMatrix);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.model.vertexBuffer);
 		gl.vertexAttribPointer(positionLocation, this.model.vertexBuffer.itemSize, gl.FLOAT, false, 0,0);
