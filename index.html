@@ -5,6 +5,7 @@
 <script src="./src/drawable.js"></script>
 <script src="./src/collidables.js"></script>
 <script src="./src/movable_object.js"></script>
+<script src="./src/player.js"></script>
 <script src="./src/jquery-1.11.3.js"></script>
 <script src="./src/webgl-utils.js"></script>
 <script src="./src/webgl-3d-math.js"></script>
@@ -137,15 +138,18 @@
 	var modelView;
     
 	//Variáveis de Camera	
+	var lockedCamera;
+	var cameraDirection;
+	var cameraMouseControl;
 	var currentCamPosition;
 	var currentCamTarget;
-	
-	var xCamTranslate;
-	var camAngle;
-	var zCamTranslate;
+	var mouseX;
+	var mouseY;
+	var camAngle1;
+	var camAngle2;
     
+	//Lighting
     var lightDirection;
-    
     var ambientLight;
     var diffuseLight;
     var specularLight;
@@ -162,7 +166,6 @@
 	
 	//Variáveis de pista
 	var squareVertexPositionBuffer; //quadrado
-	var currentMarioPosition = {};
 	
 	//Variáveis de Jogo
 	var players = [];
@@ -172,6 +175,9 @@
 	var currentlyPressedKeys = {};
 	document.onkeydown = handleKeyDown;
 	document.onkeyup = handleKeyUp;
+	document.onmousedown = handleMouseDown;
+	document.onmouseup = handleMouseUp;
+	document.onmousemove = handleMouseMove;
     
     //Funções matemáticas
     function radToDeg(r) {
@@ -227,14 +233,17 @@
 
     }
 	function initPlayers(){
-		players.push(new MovableObject(1,0,0,models.mario));
-		players.push(new MovableObject(3,0,0,models.bowser));
-		players.push(new MovableObject(5,0,0,models.peach));
+		players.push(new Player(1,0,0,models.mario));
+		players.push(new Player(3,0,0,models.bowser));
+		players.push(new Player(5,0,0,models.peach));
 		//players[0].setCollisionCircle(0,1,0,1);
 	}
 	function initObjects(){
+		//players.push(new MovableObject(5,0,5,models.shell));
 		players.push(new MovableObject(3,0,3,models.box));
 		players[3].setCollisionRectangle(0,1,2,3);
+		
+		
 		
 		//players.push(new MovableObject(3,0,6,models.box));
 		//players.push(new MovableObject(3,0,9,models.box));
@@ -262,11 +271,14 @@
         viewMatrix = makeIdentity();
         modelMatrix = makeIdentity();
 		
-		camAngle =0;
-        currentCamPosition = [0,1,-3];
+		camAngle1 =0;
+		camAngle2 =0;
+		lockedCamera = false;
+		cameraMouseControl = false;
+		cameraDirection = [0,0,1];
+        currentCamPosition = [1,1,2];
         currentCamTarget = [1,0,3];
 		
-        currentMarioPosition = [0,0,0];
         lightDirection = [0,0,0];
         
         ambientLight = [1,1,1,0];
@@ -293,11 +305,13 @@
 		OBJ.initMeshBuffers(gl, models.luigi);
 		OBJ.initMeshBuffers(gl, models.bowser);
 		OBJ.initMeshBuffers(gl, models.box);
+		//OBJ.initMeshBuffers(gl, models.shell);
 		OBJ.bindTextures(gl, models.mario);
 		OBJ.bindTextures(gl, models.peach);
 		OBJ.bindTextures(gl, models.luigi);
 		OBJ.bindTextures(gl, models.bowser);
 		OBJ.bindTextures(gl, models.box);
+		//OBJ.bindTextures(gl, models.shell);
     }
 	function initTrack() {
 		squareVertexPositionBuffer = gl.createBuffer();
@@ -345,47 +359,91 @@
         currentlyPressedKeys[event.keyCode] = false;
 	}
 	
-	function handleKey() {
-		if (currentlyPressedKeys[87]) {
-            // W
-			//time+=1;
-			//zCamTranslate = - 0.1;
-			players[0].move();
-			//currentCamTarget[2] -=0.1;
-			//xTranslate = 0;
-        } else
-		if (currentlyPressedKeys[83]) {
-			// S
-			players[0].backup();
-		}
-		if (currentlyPressedKeys[65]) {
-			// A
-			players[0].turn(0.1);
-		} else
-		if (currentlyPressedKeys[68]) {
-			// D
-			players[0].turn(-0.1);
-		}
-		
-		if (currentlyPressedKeys[69]) {
-			players[0].move();
-		}
-		if (currentlyPressedKeys[81]) {
-			//players[0].setVelocity(0.01,0,0);
-		}
-		if (currentlyPressedKeys[67]) {
-			// C
-			
-		}
-		if (currentlyPressedKeys[86]) {
-			//V
-			players[0].turn(-0.1);
-		}
-		if (currentlyPressedKeys[90]) {
-			//V
-			camAngle+=0.1;
-		}
+	function handleMouseMove(event) {
+        //console.log("Mouse"+event.clientX);
+		mouseX = event.clientX;
+		mouseY = event.clientY;
+    }
+	
+	function handleMouseDown(event) {
+        cameraMouseControl = true;
+		lastX = event.clientX;
+    }	
+	
+	function handleMouseUp(event) {
+        cameraMouseControl = false;
+    }
 
+	
+	function handleKey() {
+		if(lockedCamera)
+		{
+			if (currentlyPressedKeys[87]) {
+				// W
+				players[0].move();
+			} else
+			if (currentlyPressedKeys[83]) {
+				// S
+				players[0].backup();
+			}
+			if (currentlyPressedKeys[65]) {
+				// A
+				players[0].turn(0.1);
+			} else
+			if (currentlyPressedKeys[68]) {
+				// D
+				players[0].turn(-0.1);
+			}
+		}
+		else
+		{
+		
+			if (currentlyPressedKeys[87]) {
+				// W
+				currentCamPosition[0]+=0.2*cameraDirection[0]
+				currentCamPosition[1]+=0.2*cameraDirection[1]
+				currentCamPosition[2]+=0.2*cameraDirection[2];
+			} else
+			if (currentlyPressedKeys[83]) {
+				// S
+				currentCamPosition[0]-=0.2*cameraDirection[0]
+				currentCamPosition[1]-=0.2*cameraDirection[1]
+				currentCamPosition[2]-=0.2*cameraDirection[2];
+			}
+			if (currentlyPressedKeys[65]) {
+				// A
+				currentCamPosition[0]+=0.1;
+			} else
+			if (currentlyPressedKeys[68]) {
+				// D
+				currentCamPosition[0]-=0.1;
+			}
+		}
+			
+			if (currentlyPressedKeys[69]) {
+				players[0].move();
+			}
+			if (currentlyPressedKeys[81]) {
+				//players[0].setVelocity(0.01,0,0);
+			}
+			if (currentlyPressedKeys[67]) {
+				// C
+				if(lockedCamera)
+					lockedCamera = false;
+				else
+					lockedCamera = true;
+			}
+			if (currentlyPressedKeys[86]) {
+				//V
+				players[0].turn(-0.1);
+			}
+			if (currentlyPressedKeys[90]) {
+				//V
+				camAngle+=0.1;
+			}
+		
+
+			
 	}
     
 	function input() {
@@ -393,35 +451,11 @@
 	}
 	//Funções do Game loop
 	function draw(time) {
-        gl.viewport(0.0, 0.0, canvas.clientWidth, canvas.clientHeight);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        if(1)
-		{
-			currentCamPosition[0] = players[0].position[0] - 2*players[0].direction[0];
-			currentCamPosition[1] = 1;
-			currentCamPosition[2] = players[0].position[2] - 2*players[0].direction[2];
-	
-			currentCamTarget[0] = players[0].position[0];
-			currentCamTarget[1] = 1;
-			currentCamTarget[2] =  players[0].position[2];//players[0].position[2];
-		
 
+
+		gl.viewport(0.0, 0.0, canvas.clientWidth, canvas.clientHeight);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		
-		}else{
-		/*
-			currentCamPosition[0] = currentCamPosition[0] + xCamTranslate;
-			currentCamPosition[1] = -1;
-			currentCamPosition[2] = currentCamPosition[2] - zCamTranslate;
-			
-			currentCamTarget[0] = currentCamTarget[0] + xCamTranslate;
-			currentCamTarget[1] = -1;
-			currentCamTarget[2] = currentCamTarget[2] - zCamTranslate;
-			
-			currentMarioPosition[0] = currentMarioPosition[0] + xCamTranslate;
-			//currentMarioPosition[1] = -1
-			currentMarioPosition[2] = currentMarioPosition[2] - zCamTranslate;
-			*/
-		}
         // Definition of our projection and camera matrix and sending to the vertex shader
         projectionMatrix = makePerspective(degToRad(60),canvas.clientWidth / canvas.clientHeight, 1, 2000);
         gl.uniformMatrix4fv(projectionLocation, false, projectionMatrix);
@@ -479,59 +513,44 @@
         {
             players[i].draw();
         }
-		
-		/*
-		//Mario Translation
-		modelMatrix = makeIdentity();
-		modelMatrix = matrixMultiply(modelMatrix, makeYRotation(angleToRotate));
-		modelMatrix = matrixMultiply(modelMatrix, makeTranslation(currentMarioPosition[0],currentMarioPosition[1],currentMarioPosition[2]));
-		
-		modelView = matrixMultiply(modelMatrix,viewMatrix);
-		gl.uniformMatrix4fv(modelViewLocation, false, modelView);
-		
-		normalMatrix = makeTranspose(makeInverse(modelView));
-		gl.uniformMatrix4fv(normalMatrixLocation, false, normalMatrix);
-		//Drawing Mario
-		gl.bindBuffer(gl.ARRAY_BUFFER, models.mario.vertexBuffer);
-		gl.vertexAttribPointer(positionLocation, models.mario.vertexBuffer.itemSize, gl.FLOAT, false, 0,0);
-		
-		if(!models.mario.textures.length){
-			gl.disableVertexAttribArray(textureLocation);
-		}
-		else{
-			gl.enableVertexAttribArray(textureLocation);
-			gl.bindBuffer(gl.ARRAY_BUFFER, models.mario.textureBuffer);
-			gl.vertexAttribPointer(textureLocation, models.mario.textureBuffer.itemSize, gl.FLOAT, false, 0,0);
-		}
-		
-		if(!models.mario.vertexNormals.length){
-			gl.disableVertexAttribArray(vertexNormalLocation);
-		}
-		else{
-			gl.enableVertexAttribArray(vertexNormalLocation);
-			gl.bindBuffer(gl.ARRAY_BUFFER, models.mario.normalBuffer);
-			gl.vertexAttribPointer(vertexNormalLocation, models.mario.normalBuffer.itemSize, gl.FLOAT, false, 0,0);
-		}
-		
-		for (var item of models.mario.groupIndices) {
-			var currentTexture = models.mario.groupTextures.get(item[0]);
-			//console.log(currentTexture);
-			gl.activeTexture(gl.TEXTURE0);
-			gl.bindTexture(gl.TEXTURE_2D, currentTexture);
-			gl.uniform1i(samplerLocation, 0);
-			
-			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.mario.indexBuffer);
-			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(item[1]), gl.STATIC_DRAW);
-			gl.drawElements(gl.TRIANGLES, item[1].length, gl.UNSIGNED_SHORT, 0);
-		}*/
-		
-
-        
     
     }
 
     function update() {
-        console.log(time);
+		//Camera 
+		if(lockedCamera)
+		{
+			currentCamPosition[0] = players[0].position[0] - 2*players[0].direction[0];
+			currentCamPosition[1] = 1;
+			currentCamPosition[2] = players[0].position[2] - 2*players[0].direction[2];
+	
+			currentCamTarget[0] = players[0].position[0];
+			currentCamTarget[1] = 1;
+			currentCamTarget[2] =  players[0].position[2];//players[0].position[2];
+		
+
+		
+		}else{
+		
+
+			currentCamPosition[0] = currentCamPosition[0];
+			//currentCamPosition[1] = -1;
+			currentCamPosition[2] = currentCamPosition[2];
+			
+			if(cameraMouseControl)
+			{
+				camAngle1+=(mouseX-lastX)*0.01;
+				lastX=mouseX;
+				cameraDirection[0] = Math.sin(camAngle1);
+				cameraDirection[2] = Math.cos(camAngle1);
+			}
+			
+			currentCamTarget[0] = currentCamPosition[0] + cameraDirection[0];
+			currentCamTarget[1] = currentCamPosition[1] + cameraDirection[1];
+			currentCamTarget[2] = currentCamPosition[2] + cameraDirection[2];
+			
+		}
+        //console.log(time);
     }
     
     function gameLoop() {
@@ -539,7 +558,6 @@
         update();
         draw(time);
         requestAnimationFrame(gameLoop);
-		
     }
 
 
@@ -550,6 +568,10 @@
 			'luigi': 'models/Luigi/luigi.obj',
 			'bowser': 'models/Bowser/kk_kart.obj',
 			'box': 'models/Caixa/qmark.obj'
+			//'shell': 'models/Items/Shell3/KoopaShell.obj'
+			//'shell': 'models/Items/Shell2/Green Shell/ItmGreenShell.obj'//almost works
+			//'shell': 'models/Items/Shell/DolGreenShell.obj'//almost works
+			//'banana': 'models/Items/banana.obj'
     }, init);
 }
 </script>
@@ -559,6 +581,6 @@
 <body>
         <h4>Kartellanister</h4>
         <div id="section">
-              <canvas id="Karttelan-canvas" style="border: none;" width="640" height="640"></canvas>
+              <canvas id="Karttelan-canvas" style="border: none;" width="1280" height="720"></canvas>
         </div>
 </body>

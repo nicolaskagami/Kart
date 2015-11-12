@@ -316,6 +316,7 @@
           callback(_this.xmlhttp.responseText, _this.xmlhttp.status);
         }
       };
+	  //console.log(url);
       _this.xmlhttp.open('GET', url, true);
       _this.xmlhttp.send();
     }
