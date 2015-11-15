@@ -83,6 +83,8 @@ function initTexture(){
 	OBJ.initMeshBuffers(gl, models.box);
 	OBJ.initMeshBuffers(gl, models.greenShell);
 	OBJ.initMeshBuffers(gl, models.mushroom);
+
+	OBJ.initMeshBuffers(gl, models.segmento);
 	
 	//Playable Characters
 	OBJ.bindTextures(gl, models.mario);
@@ -93,6 +95,8 @@ function initTexture(){
 	OBJ.bindTextures(gl, models.box);
 	OBJ.bindTextures(gl, models.greenShell);
 	OBJ.bindTextures(gl, models.mushroom);
+
+	OBJ.bindTextures(gl, models.segmento);
 }
 function initShaders() {
 
@@ -174,9 +178,10 @@ function draw() {
 	modelMatrix = makeIdentity();
 	modelView = matrixMultiply(modelMatrix,viewMatrix);
 	gl.uniformMatrix4fv(modelViewLocation, false, modelView);
-	gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
-	gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-	gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
+
+	//gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
+	//gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	//gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
 	
 	for(var i=0;i<players.length;i++)
 	{

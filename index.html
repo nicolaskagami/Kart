@@ -113,6 +113,7 @@
     
 	//Variáveis de pista
 	var squareVertexPositionBuffer; //quadrado
+
 	
 	//Variáveis de Jogo
 	var players = [];
@@ -137,17 +138,22 @@
 		//players[0].setCollisionCircle(0,1,0,1);
 	}
 	function initObjects(){ //To be defined at game select
-		items.push(new Box([3,0,3]));
+		//items.push(new Box([3,0,3]));
 		items.push(new Box([0,0,3]));
 		items.push(new Box([-3,0,3]));
 		
 		items.push(new Mushroom([3,2,3]));
 		items.push(new Mushroom([0,2,3]));
 		items.push(new Mushroom([-3,2,3]));
+
 		
 		
 	}
 	function initTrack() { //To be defined at game select (even if it's just one...)
+
+    items.push(new MovableObject(0,0,0,models.segmento));
+
+    /*
 		squareVertexPositionBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
 		vertices = [
@@ -159,6 +165,10 @@
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 		squareVertexPositionBuffer.itemSize = 3;
 		squareVertexPositionBuffer.numItems = 4;
+        gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
+        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
+        */
 	}
 	function init(meshes) {
         canvas = document.getElementById("Mairo-canvas");
@@ -212,7 +222,8 @@
 			'box': 'models/Caixa/qmark.obj',
 			'greenShell': 'models/Items/GreenShell/GreenShell.obj',
 			//'redShell': 'models/Items/RedShell/RedShell.obj'//almost works
-			'mushroom': 'models/Items/Mushroom/ItmMushroom.obj'
+			'mushroom': 'models/Items/Mushroom/ItmMushroom.obj',
+            'segmento': 'models/Pista/segmentoReta.obj'
 			//'banana': 'models/Items/banana.obj'
     }, init);
 }
