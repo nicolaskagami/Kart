@@ -1,14 +1,15 @@
-var Shell = function(newPosition,newDirection)
+var GreenShell = function(newPosition,newDirection)
 {
 	this.position = newPosition.slice();
 	this.speed = 0.1; 
+	this.angularSpeed = 0.2;
 	this.angle = 0;
 	this.direction = newDirection.slice();;
 	//this.collisionArea = new CollidableCircle(x,z,0.8); // fix this
 	this.model = models.greenShell;
 	this.scale = [0.05,0.05,0.05];
 }
-Shell.prototype = Object.create(MovableObject.prototype);
+GreenShell.prototype = Object.create(MovableObject.prototype);
 var Box = function(x,y,z)
 {
 	this.position = [x,y,z];

@@ -40,7 +40,7 @@ function handleKey() {
 	if(lockedCamera)
 	{
 		if (currentlyPressedKeys[87]) {
-			// W
+			// W 
 			players[currentPlayer].move();
 		} else
 		if (currentlyPressedKeys[83]) {
@@ -48,16 +48,17 @@ function handleKey() {
 			players[currentPlayer].backup();
 		}
 		if (currentlyPressedKeys[65]) {
-			// A
+			// A - Turn Left
 			players[currentPlayer].turn(0.1);
 		} else
 		if (currentlyPressedKeys[68]) {
-			// D
+			// D - Turn Right
 			players[currentPlayer].turn(-0.1);
 		}
 		if (currentlyPressedKeys[32]) {
-			// D
+			// Space - Use Item
 			players[currentPlayer].throwShell();
+			currentlyPressedKeys[32] = false;
 		}
 	}
 	else
@@ -84,7 +85,7 @@ function handleKey() {
 	}
 		
 		if (currentlyPressedKeys[69]) {
-			players[0].move();
+			//players[0].move();
 		}
 		if (currentlyPressedKeys[81]) {
 			//players[0].setVelocity(0.01,0,0);

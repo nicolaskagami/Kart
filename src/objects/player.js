@@ -32,7 +32,7 @@ Player.prototype.move = function()
 }
 Player.prototype.throwShell = function()
 {
-	projectiles.push(new Shell(this.position,this.direction));
+	projectiles.push(new GreenShell(this.position,this.direction));
 }
 Player.prototype.backup = function()
 {
