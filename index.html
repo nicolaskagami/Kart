@@ -12,6 +12,7 @@
 <script src="./src/objects/collidable.js"></script>
 <script src="./src/objects/movable.js"></script>
 <script src="./src/objects/player.js"></script>
+<script src="./src/objects/item.js"></script>
 //
 <script src="./src/camera.js"></script>
 <script src="./src/input.js"></script>
@@ -118,6 +119,8 @@
 	var players = [];
 	var items = [];
 	var projectiles = [];
+	var currentPlayer;
+	var focusedObject;
 
     //Funções matemáticas
     function radToDeg(r) {
@@ -135,10 +138,8 @@
 		//players[0].setCollisionCircle(0,1,0,1);
 	}
 	function initObjects(){ //To be defined at game select
-		players.push(new MovableObject(5,0,5,models.greenShell));
-		players.push(new MovableObject(3,0,3,models.box));
-		players[4].setScale(0.25);
-		players[4].setCollisionRectangle(0,1,2,3);
+		//items.push(new Shell(5,0,5));
+		items.push(new Box(3,0,3));
 		
 	}
 	function initTrack() { //To be defined at game select (even if it's just one...)
@@ -166,7 +167,8 @@
 		initTrack();
         initTexture();
         initDrawingParameters();
-
+		
+		currentPlayer = 0;
         gameLoop();
     }
 

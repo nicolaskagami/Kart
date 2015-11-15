@@ -21,7 +21,6 @@ function handleKeyUp(event) {
 }
 
 function handleMouseMove(event) {
-	//console.log("Mouse"+event.clientX);
 	mouseX = event.clientX;
 	mouseY = event.clientY;
 }
@@ -29,6 +28,7 @@ function handleMouseMove(event) {
 function handleMouseDown(event) {
 	cameraMouseControl = true;
 	lastX = event.clientX;
+	lastY = event.clientY;
 }	
 
 function handleMouseUp(event) {
@@ -41,19 +41,23 @@ function handleKey() {
 	{
 		if (currentlyPressedKeys[87]) {
 			// W
-			players[0].move();
+			players[currentPlayer].move();
 		} else
 		if (currentlyPressedKeys[83]) {
 			// S
-			players[0].backup();
+			players[currentPlayer].backup();
 		}
 		if (currentlyPressedKeys[65]) {
 			// A
-			players[0].turn(0.1);
+			players[currentPlayer].turn(0.1);
 		} else
 		if (currentlyPressedKeys[68]) {
 			// D
-			players[0].turn(-0.1);
+			players[currentPlayer].turn(-0.1);
+		}
+		if (currentlyPressedKeys[32]) {
+			// D
+			players[currentPlayer].throwShell();
 		}
 	}
 	else
@@ -73,11 +77,9 @@ function handleKey() {
 		}
 		if (currentlyPressedKeys[65]) {
 			// A
-			currentCamPosition[0]+=0.1;
 		} else
 		if (currentlyPressedKeys[68]) {
 			// D
-			currentCamPosition[0]-=0.1;
 		}
 	}
 		
@@ -93,10 +95,13 @@ function handleKey() {
 				lockedCamera = false;
 			else
 				lockedCamera = true;
+			currentlyPressedKeys[67] = false; //"debouncer"
 		}
 		if (currentlyPressedKeys[86]) {
 			//V
-			players[0].turn(-0.1);
+			currentPlayer = (currentPlayer +1) % players.length;
+			console.log(currentPlayer);
+			currentlyPressedKeys[86] = false //"debouncer"
 		}
 		if (currentlyPressedKeys[90]) {
 			//V

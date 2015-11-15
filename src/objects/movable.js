@@ -1,7 +1,7 @@
 var MovableObject = function(x,y,z,model)
 {
 	this.position = [x,y,z];
-	this.speed = 0.1; 
+	this.speed = 0; 
 	this.angle = 0;
 	this.direction = [0,0,1];
 	this.collisionArea = new CollidableCircle(x,z,0.8);

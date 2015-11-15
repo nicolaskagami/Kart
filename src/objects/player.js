@@ -30,6 +30,10 @@ Player.prototype.move = function()
 	this.position[1] = intendedPositiony;
 	this.position[2] = intendedPositionz;
 }
+Player.prototype.throwShell = function()
+{
+	projectiles.push(new Shell(this.position,this.direction));
+}
 Player.prototype.backup = function()
 {
 	var intendedPositionx = this.position[0] - this.speed*this.direction[0];
