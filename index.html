@@ -2,18 +2,17 @@
 
 <head>
 <title>Mairo Kart</title>
-//Libraries used
 <script src="./src/lib/jquery-1.11.3.js"></script>
 <script src="./src/lib/webgl-utils.js"></script>
 <script src="./src/lib/webgl-3d-math.js"></script>
 <script src="./src/lib/webgl-obj-loader.js"></script>
-//Objects
+
 <script src="./src/objects/drawable.js"></script>
 <script src="./src/objects/collidable.js"></script>
 <script src="./src/objects/movable.js"></script>
 <script src="./src/objects/player.js"></script>
 <script src="./src/objects/item.js"></script>
-//
+
 <script src="./src/camera.js"></script>
 <script src="./src/input.js"></script>
 <script src="./src/draw.js"></script>
@@ -131,15 +130,21 @@
         return d * Math.PI / 180;
     }
     
-	function initPlayers(){ //To be defined at game select
-		players.push(new Player(1,0,0,models.mario));
-		players.push(new Player(3,0,0,models.bowser));
-		players.push(new Player(5,0,0,models.peach));
+	function initPlayers() { //To be defined at game select
+		players.push(new Player(0,0,0,models.mario));
+		//players.push(new Player(3,0,0,models.bowser));
+		//players.push(new Player(5,0,0,models.peach));
 		//players[0].setCollisionCircle(0,1,0,1);
 	}
 	function initObjects(){ //To be defined at game select
-		//items.push(new Shell(5,0,5));
-		items.push(new Box(3,0,3));
+		items.push(new Box([3,0,3]));
+		items.push(new Box([0,0,3]));
+		items.push(new Box([-3,0,3]));
+		
+		items.push(new Mushroom([3,2,3]));
+		items.push(new Mushroom([0,2,3]));
+		items.push(new Mushroom([-3,2,3]));
+		
 		
 	}
 	function initTrack() { //To be defined at game select (even if it's just one...)
@@ -183,7 +188,7 @@
         }
 		for(var i=0;i<items.length;i++)
         {
-            //items[i].move();
+            items[i].move();
         }
 		for(var i=0;i<projectiles.length;i++)
         {
@@ -205,10 +210,9 @@
 			'luigi': 'models/Luigi/luigi.obj',
 			'bowser': 'models/Bowser/kk_kart.obj',
 			'box': 'models/Caixa/qmark.obj',
-			//'shell': 'models/Items/Shell3/KoopaShell.obj'
-			//'shell': 'models/Items/Shell2/Green Shell/ItmGreenShell.obj'//almost works
-			'greenShell': 'models/Items/GreenShell/GreenShell.obj'
+			'greenShell': 'models/Items/GreenShell/GreenShell.obj',
 			//'redShell': 'models/Items/RedShell/RedShell.obj'//almost works
+			'mushroom': 'models/Items/Mushroom/ItmMushroom.obj'
 			//'banana': 'models/Items/banana.obj'
     }, init);
 }

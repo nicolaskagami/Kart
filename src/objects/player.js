@@ -33,6 +33,8 @@ Player.prototype.move = function()
 Player.prototype.throwShell = function()
 {
 	projectiles.push(new GreenShell(this.position,this.direction));
+	//projectiles.push(new Mushroom(this.position));
+	//projectiles.push(new Box(this.position));
 }
 Player.prototype.backup = function()
 {

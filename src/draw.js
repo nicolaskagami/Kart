@@ -82,6 +82,7 @@ function initTexture(){
 	//Items
 	OBJ.initMeshBuffers(gl, models.box);
 	OBJ.initMeshBuffers(gl, models.greenShell);
+	OBJ.initMeshBuffers(gl, models.mushroom);
 	
 	//Playable Characters
 	OBJ.bindTextures(gl, models.mario);
@@ -91,6 +92,7 @@ function initTexture(){
 	//Items
 	OBJ.bindTextures(gl, models.box);
 	OBJ.bindTextures(gl, models.greenShell);
+	OBJ.bindTextures(gl, models.mushroom);
 }
 function initShaders() {
 

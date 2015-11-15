@@ -16,7 +16,7 @@ function initCamera() {
 	lockedCamera = false;
 	cameraMouseControl = false;
 	cameraDirection = [0,0,1];
-	currentCamPosition = [1,1,2];
+	currentCamPosition = [0,1,-5];
 	currentCamTarget = [1,0,3];
 }
 
