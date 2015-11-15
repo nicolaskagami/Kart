@@ -9,7 +9,7 @@ Ks 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 1
-map_Kd E_face.tga
+map_Kd E_face.jpg
 
 newmtl E_main
 Ns 96.078431
@@ -19,7 +19,7 @@ Ks 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 1
-map_Kd E_main.tga
+map_Kd E_main.jpg
 
 newmtl kart_body
 Ns 96.078431
@@ -29,7 +29,7 @@ Ks 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 1
-map_Kd kart_body.tga
+map_Kd kart_body.jpg
 
 newmtl kart_e
 Ns 96.078431
@@ -39,7 +39,7 @@ Ks 0.000000 0.000000 0.000000
 Ni 1.000000
 d 0.000000
 illum 1
-map_Kd kart_e.tga
+map_Kd kart_e.jpg
 
 newmtl kart_tire
 Ns 96.078431
@@ -49,4 +49,4 @@ Ks 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 1
-map_Kd kart_tire.tga
+map_Kd kart_tire.jpg
