@@ -57,7 +57,7 @@ function handleKey() {
 		}
 		if (currentlyPressedKeys[32]) {
 			// Space - Use Item
-			players[currentPlayer].throwShell();
+			players[currentPlayer].useItem();
 			currentlyPressedKeys[32] = false;
 		}
 	}

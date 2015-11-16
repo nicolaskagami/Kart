@@ -12,6 +12,7 @@
 <script src="./src/objects/movable.js"></script>
 <script src="./src/objects/player.js"></script>
 <script src="./src/objects/item.js"></script>
+<script src="./src/objects/static.js"></script>
 
 <script src="./src/camera.js"></script>
 <script src="./src/input.js"></script>
@@ -138,7 +139,7 @@
 		//players[0].setCollisionCircle(0,1,0,1);
 	}
 	function initObjects(){ //To be defined at game select
-		//items.push(new Box([3,0,3]));
+		items.push(new Box([3,0,3]));
 		items.push(new Box([0,0,3]));
 		items.push(new Box([-3,0,3]));
 		
