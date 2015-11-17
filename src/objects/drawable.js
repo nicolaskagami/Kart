@@ -1,5 +1,7 @@
-var Drawable = function(model)
+var Drawable = function(newPosition,model)
 {
+	this.position = newPosition.slice();
+	this.angle = 0;
 	this.model = model;
 	this.scale = [1.0,1.0,1.0];
 }
@@ -20,27 +22,27 @@ Drawable.prototype =
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.model.vertexBuffer);
 		gl.vertexAttribPointer(positionLocation, this.model.vertexBuffer.itemSize, gl.FLOAT, false, 0,0);
 		
-		if(!this.model.textures.length){
+		if(!this.model.textures.length)
+		{
 			gl.disableVertexAttribArray(textureLocation);
-		}
-		else{
+		} else {
 			gl.enableVertexAttribArray(textureLocation);
 			gl.bindBuffer(gl.ARRAY_BUFFER,this.model.textureBuffer);
 			gl.vertexAttribPointer(textureLocation, this.model.textureBuffer.itemSize, gl.FLOAT, false, 0,0);
 		}
 		
-		if(!this.model.vertexNormals.length){
+		if(!this.model.vertexNormals.length)
+		{
 			gl.disableVertexAttribArray(vertexNormalLocation);
-		}
-		else{
+		} else {
 			gl.enableVertexAttribArray(vertexNormalLocation);
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.model.normalBuffer);
 			gl.vertexAttribPointer(vertexNormalLocation, this.model.normalBuffer.itemSize, gl.FLOAT, false, 0,0);
 		}
 		
-		for (var item of this.model.groupIndices) {
+		for (var item of this.model.groupIndices) 
+		{
 			var currentTexture = this.model.groupTextures.get(item[0]);
-			//console.log(currentTexture);
 			gl.activeTexture(gl.TEXTURE0);
 			gl.bindTexture(gl.TEXTURE_2D, currentTexture);
 			gl.uniform1i(samplerLocation, 0);

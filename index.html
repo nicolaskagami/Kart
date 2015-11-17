@@ -11,8 +11,9 @@
 <script src="./src/objects/collidable.js"></script>
 <script src="./src/objects/movable.js"></script>
 <script src="./src/objects/player.js"></script>
-<script src="./src/objects/item.js"></script>
 <script src="./src/objects/static.js"></script>
+<script src="./src/objects/item.js"></script>
+
 
 <script src="./src/camera.js"></script>
 <script src="./src/input.js"></script>
@@ -131,6 +132,9 @@
     function degToRad(d) {
         return d * Math.PI / 180;
     }
+	Array.prototype.remove = function(object) {
+		this.splice(this.indexOf(object),1);
+	};
     
 	function initPlayers() { //To be defined at game select
 		players.push(new Player(0,0,0,models.mario));
@@ -144,7 +148,7 @@
 		items.push(new Box([-3,0,3]));
 		
 		items.push(new Mushroom([3,2,3]));
-		items.push(new Mushroom([0,2,3]));
+		//items.push(new Mushroom([0,2,3]));
 		items.push(new Mushroom([-3,2,3]));
 
 		
@@ -152,7 +156,7 @@
 	}
 	function initTrack() { //To be defined at game select (even if it's just one...)
 
-    items.push(new MovableObject(0,0,0,models.segmento));
+    items.push(new StaticObject(0,0,0,models.segmento));
 
     /*
 		squareVertexPositionBuffer = gl.createBuffer();
@@ -195,7 +199,7 @@
 
 		for(var i=0;i<players.length;i++)
         {
-            //players[i].move();
+            players[i].move();
         }
 		for(var i=0;i<items.length;i++)
         {

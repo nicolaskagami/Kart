@@ -1,8 +1,10 @@
 var Player = function(x,y,z,model)
 {
 	this.position = [x,y,z];
-	this.speed = 0.1; 
+	this.maxSpeed = 0.5;
+	this.speed = 0; 
 	this.angle = 0;
+	this.angularSpeed = 0;
 	this.direction = [0,0,1];
 	this.collisionArea = new CollidableCircle(this.position,0.8);
 	this.model = model;
@@ -10,24 +12,52 @@ var Player = function(x,y,z,model)
 	this.item = ''//No item
 }
 Player.prototype = Object.create(MovableObject.prototype);
+Player.prototype.accelerate = function()
+{
+	this.speed+=0.02*(this.maxSpeed-this.speed);
+}
+Player.prototype.decelerate = function()
+{
+	this.speed-=0.02*(this.maxSpeed+this.speed);
+}
 Player.prototype.move = function()
 {
-	var intendedPositionx = this.position[0] + this.speed*this.direction[0];
-	var intendedPositiony = this.position[1] + this.speed*this.direction[1];
-	var intendedPositionz = this.position[2] + this.speed*this.direction[2];
+	
+	//Linear
+	this.intendedPositionx = this.position[0] + this.speed*this.direction[0];
+	this.intendedPositiony = this.position[1] + this.speed*this.direction[1];
+	this.intendedPositionz = this.position[2] + this.speed*this.direction[2];
 	for(var i=0;i<players.length;i++)
 	{
 		if(players[i]!=this)
 		{
-			if(players[i].collisionArea.testCollision(intendedPositionx,intendedPositionz))
+			if(players[i].testCollision(this))
 			{
 				return;
 			}
 		}
 	}
-	this.position[0] = intendedPositionx;
-	this.position[1] = intendedPositiony;
-	this.position[2] = intendedPositionz;
+	for(var i=0;i<items.length;i++)
+	{
+		if(items[i].testCollision(this))
+		{
+			return;
+		}
+	}
+	this.position[0] = this.intendedPositionx;
+	this.position[1] = this.intendedPositiony;
+	this.position[2] = this.intendedPositionz;
+	
+	//Angular
+	this.angle += this.angularSpeed;
+	this.speed*=0.98;
+}
+Player.prototype.getItem = function(item)
+{
+	if(this.item == '')
+	{
+		this.item = item;
+	}
 }
 Player.prototype.useItem = function()
 {
@@ -43,23 +73,4 @@ Player.prototype.useItem = function()
 	}
 	this.item = '';
 }
-Player.prototype.backup = function()
-{
-	var intendedPositionx = this.position[0] - this.speed*this.direction[0];
-	var intendedPositiony = this.position[1] - this.speed*this.direction[1];
-	var intendedPositionz = this.position[2] - this.speed*this.direction[2];
-	for(var i=0;i<players.length;i++)
-	{
-		if(players[i]!=this)
-		{
-			if(players[i].collisionArea.testCollision(intendedPositionx,intendedPositionz))
-			{
-				//console.log("Collision!");
-				return;
-			}
-		}
-	}
-	this.position[0] = intendedPositionx;
-	this.position[1] = intendedPositiony;
-	this.position[2] = intendedPositionz;
-}
+

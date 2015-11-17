@@ -41,11 +41,11 @@ function handleKey() {
 	{
 		if (currentlyPressedKeys[87]) {
 			// W 
-			players[currentPlayer].move();
+			players[currentPlayer].accelerate();
 		} else
 		if (currentlyPressedKeys[83]) {
 			// S
-			players[currentPlayer].backup();
+			players[currentPlayer].decelerate();
 		}
 		if (currentlyPressedKeys[65]) {
 			// A - Turn Left

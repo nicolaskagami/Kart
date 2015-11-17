@@ -6,9 +6,12 @@ var CollidableRectangle = function(position,halfside)
 }
 CollidableRectangle.prototype = 
 {
-	testCollision: function(x,z)
+	testCollision: function(object)
 	{
-		if((x>this.position[0]-halfside)&&(x<this.position[0]+halfside)&&(z>this.position[2]-halfside)&&(z<this.position[2]+halfside))
+		if( (object.intendedPositionx>this.position[0]-this.halfside)&&
+			(object.intendedPositionx<this.position[0]+this.halfside)&&
+			(object.intendedPositionz>this.position[2]-this.halfside)&&
+			(object.intendedPositionz<this.position[2]+this.halfside))
 			return true;//Collision
 		else
 			return false;
@@ -21,9 +24,11 @@ var CollidableCircle = function(position, radius)
 }
 CollidableCircle.prototype = 
 {
-	testCollision: function(x,z)
+	testCollision: function(object)
 	{
-		if(((this.position[0]-x)*(this.position[0]-x)+(this.position[2]-z)*(this.position[2]-z))<(this.radius*this.radius))
+		if(((this.position[0]-object.intendedPositionx)*(this.position[0]-object.intendedPositionx)+
+		    (this.position[2]-object.intendedPositionz)*(this.position[2]-object.intendedPositionz))
+				<(this.radius*this.radius))
 			return true;//Collision
 		else
 			return false;

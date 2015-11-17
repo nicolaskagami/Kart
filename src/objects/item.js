@@ -22,7 +22,17 @@ var Box = function(newPosition)
 	this.model = models.box;
 	this.scale = [0.25,0.25,0.25];
 }
-Box.prototype = Object.create(MovableObject.prototype);
+Box.prototype = Object.create(StaticObject.prototype);
+Box.prototype.testCollision = function(object)
+{
+	if(this.collisionArea.testCollision(object))	
+	{
+		object.getItem("GreenShell");
+		items.remove(this);
+	} else {
+		return false;
+	}
+}
 var Mushroom = function(newPosition)
 {
 	this.position = newPosition.slice();
@@ -35,7 +45,7 @@ var Mushroom = function(newPosition)
 	this.model = models.mushroom;
 	this.scale = [0.15,0.15,0.15];
 }
-Mushroom.prototype = Object.create(MovableObject.prototype);
+Mushroom.prototype = Object.create(StaticObject.prototype);
 var Banana = function(newPosition)
 {
 	this.position = newPosition.slice();
