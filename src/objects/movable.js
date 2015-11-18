@@ -1,6 +1,7 @@
 var MovableObject = function(x,y,z,model)
 {
 	this.position = [x,y,z];
+	this.height=0;
 	this.speed = 0; 
 	this.angularSpeed = 0;
 	this.angle = 0;
@@ -58,6 +59,6 @@ MovableObject.prototype.testCollision = function(object)
 MovableObject.prototype.turn = function(angle)
 {
 	this.angle +=angle;
-	this.direction[0] = Math.sin(this.angle);
-	this.direction[2] = Math.cos(this.angle);
+	this.direction[0] += Math.sin(this.angle);
+	this.direction[2] += Math.cos(this.angle);
 }

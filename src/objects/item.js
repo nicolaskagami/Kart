@@ -1,6 +1,7 @@
 var GreenShell = function(newPosition,newDirection)
 {
 	this.position = newPosition.slice();
+	this.height=0;
 	this.speed = 0.1; 
 	this.angularSpeed = 0.2;
 	this.angle = 0;
@@ -10,10 +11,57 @@ var GreenShell = function(newPosition,newDirection)
 	this.scale = [0.05,0.05,0.05];
 }
 GreenShell.prototype = Object.create(MovableObject.prototype);
+GreenShell.prototype.move = function()
+{
+	//Linear
+	this.intendedPositionx = this.position[0] + this.speed*this.direction[0];
+	this.intendedPositiony = this.position[1] + this.speed*this.direction[1];
+	this.intendedPositionz = this.position[2] + this.speed*this.direction[2];
+	for(var i=0;i<players.length;i++)
+	{
+		if(players[i]!=this)
+		{
+			if(players[i].testCollision(this))
+			{
+				if(typeof players[i].getHit === 'function')
+				{
+					players[i].getHit();
+				}
+				projectiles.remove(this);
+				return;
+			}
+		}
+	}
+	for(var i=0;i<items.length;i++)
+	{
+		if(items[i].testCollision(this))
+		{
+			return;
+		}
+	}
+	for(var i=0;i<track.length;i++)
+	{
+		if(track[i].testCollisionRight(this))
+		{
+			return;
+		}
+		else if(track[i].testCollisionLeft(this)){
+			return;
+		}
+	}
+	this.position[0] = this.intendedPositionx;
+	this.position[1] = this.intendedPositiony;
+	this.position[2] = this.intendedPositionz;
+	
+	//Angular
+	this.angle += this.angularSpeed;
+	
+}
 var Box = function(newPosition)
 {
 	this.position = newPosition.slice();
-	this.position[1]+=0.5;
+	this.height=0.2;
+	this.position[1]+=0.2;
 	this.speed = 0; 
 	this.angle = 0;
 	this.angularSpeed = 0.1;
@@ -28,7 +76,10 @@ Box.prototype.testCollision = function(object)
 	if(this.collisionArea.testCollision(object))	
 	{
 		if(typeof object.getItem === 'function')
+		{
+			//object.getItem("Banana");
 			object.getItem("Random");
+		}
 		items.remove(this);
 	} else {
 		return false;
@@ -37,19 +88,33 @@ Box.prototype.testCollision = function(object)
 var Mushroom = function(newPosition)
 {
 	this.position = newPosition.slice();
-	this.position[1]+=1.2;
+	this.height=0.6;
 	this.speed = 0; 
 	this.angularSpeed = 0.1;
 	this.angle = 0;
 	this.direction = [0,0,1];
 	this.collisionArea = new CollidableCircle(this.position,0.8); // fix this
 	this.model = models.mushroom;
-	this.scale = [0.15,0.15,0.15];
+	this.scale = [0.10,0.10,0.10];
 }
 Mushroom.prototype = Object.create(StaticObject.prototype);
+Mushroom.prototype.testCollision = function(object)
+{
+	if(this.collisionArea.testCollision(object))	
+	{
+		if(typeof object.getItem === 'function')
+		{
+			object.getItem("Mushroom");
+		}
+		items.remove(this);
+	} else {
+		return false;
+	}
+}
 var Banana = function(newPosition)
 {
 	this.position = newPosition.slice();
+	this.height=0;
 	this.speed = 0; 
 	this.angularSpeed = 0.1;
 	this.angle = 0;
@@ -58,4 +123,17 @@ var Banana = function(newPosition)
 	this.model = models.banana;
 	this.scale = [0.4,0.4,0.4];
 }
-Banana.prototype = Object.create(MovableObject.prototype);
+Banana.prototype = Object.create(StaticObject.prototype);
+Banana.prototype.testCollision = function(object)
+{
+	if(this.collisionArea.testCollision(object))	
+	{
+		if(typeof object.getHit === 'function')
+		{
+			object.getHit();
+		}
+		items.remove(this);
+	} else {
+		return false;
+	}
+}

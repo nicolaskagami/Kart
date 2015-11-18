@@ -10,6 +10,7 @@ var TrackSegment = function(x,y,z,model)
 	this.collisionAreaRight = new CollidableArea(this.leftWallPos,1,4);
 	this.collisionAreaLeft = new CollidableArea(this.rightWallPos,1,4);
 	this.model = model;
+	this.height=0;
 	this.scale = [1.0,1.0,1.0];
 }
 TrackSegment.prototype = Object.create(Drawable.prototype);
@@ -23,12 +24,12 @@ TrackSegment.prototype.turn = function(angle)
 }
 TrackSegment.prototype.testCollisionRight = function(object)
 {
-	console.log("Wall Right");
+	//console.log("Wall Right");
 	return this.collisionAreaRight.testCollision(object);
 }
 TrackSegment.prototype.testCollisionLeft = function(object)
 {
-	console.log("Wall Left");
+	//console.log("Wall Left");
 	return this.collisionAreaLeft.testCollision(object);
 }
 
@@ -42,6 +43,7 @@ var Curve = function(x,y,z,model)
 	this.collisionAreaRight = new CollidableArea(this.backWallPos,5,1);
 	this.collisionAreaLeft = new CollidableArea(this.rightWallPos,1,5);
 	this.model = model;
+	this.height=0;
 	this.scale = [1.0,1.0,1.0];
 }
 Curve.prototype = Object.create(Drawable.prototype);
@@ -55,11 +57,11 @@ Curve.prototype.turn = function(angle)
 }
 Curve.prototype.testCollisionRight = function(object)
 {
-	console.log("Wall Right");
+	//console.log("Wall Right");
 	return this.collisionAreaRight.testCollision(object);
 }
 Curve.prototype.testCollisionLeft = function(object)
 {
-	console.log("Wall Left");
+	//console.log("Wall Left");
 	return this.collisionAreaLeft.testCollision(object);
 }

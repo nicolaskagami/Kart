@@ -139,8 +139,8 @@
     
 	function initPlayers() { //To be defined at game select
 		players.push(new Player(0,0,0,models.mario));
-		//players.push(new Player(3,0,0,models.bowser));
-		//players.push(new Player(5,0,0,models.peach));
+		players.push(new Player(3,0,0,models.bowser));
+		players.push(new Player(5,0,0,models.peach));
 		//players[0].setCollisionCircle(0,1,0,1);
 	}
 	function initObjects(){ //To be defined at game select
@@ -148,9 +148,9 @@
 		items.push(new Box([0,0,3]));
 		items.push(new Box([-3,0,3]));
 		
-		items.push(new Mushroom([3,2,3]));
-		//items.push(new Mushroom([0,2,3]));
-		items.push(new Mushroom([-3,2,3]));
+		items.push(new Mushroom([3,0,6]));
+		items.push(new Mushroom([0,0,6]));
+		items.push(new Mushroom([-3,0,6]));
 
 		
 		

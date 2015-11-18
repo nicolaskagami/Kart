@@ -49,11 +49,11 @@ function handleKey() {
 		}
 		if (currentlyPressedKeys[65]) {
 			// A - Turn Left
-			players[currentPlayer].turn(0.1);
+			players[currentPlayer].turn(0.08);
 		} else
 		if (currentlyPressedKeys[68]) {
 			// D - Turn Right
-			players[currentPlayer].turn(-0.1);
+			players[currentPlayer].turn(-0.08);
 		}
 		if (currentlyPressedKeys[32]) {
 			// Space - Use Item

@@ -1,6 +1,7 @@
 var Drawable = function(newPosition,model)
 {
 	this.position = newPosition.slice();
+	this.height=0;
 	this.angle = 0;
 	this.model = model;
 	this.scale = [1.0,1.0,1.0];
@@ -12,7 +13,7 @@ Drawable.prototype =
 		modelMatrix = makeIdentity();
 		modelMatrix = matrixMultiply(modelMatrix, makeScale(this.scale[0],this.scale[1],this.scale[2]));
 		modelMatrix = matrixMultiply(modelMatrix, makeYRotation(this.angle));
-		modelMatrix = matrixMultiply(modelMatrix, makeTranslation(this.position[0],this.position[1],this.position[2]));
+		modelMatrix = matrixMultiply(modelMatrix, makeTranslation(this.position[0],this.position[1]+this.height,this.position[2]));
 		
 		modelView = matrixMultiply(modelMatrix,viewMatrix);
 		gl.uniformMatrix4fv(modelViewLocation, false, modelView);

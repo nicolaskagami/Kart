@@ -24,9 +24,9 @@ function initCamera() {
 function updateCamera() {
 	if(lockedCamera)
 	{
-		currentCamPosition[0] = players[currentPlayer].position[0] - 2*players[currentPlayer].direction[0];
-		currentCamPosition[1] = players[currentPlayer].position[1] - 2*players[currentPlayer].direction[1] + 1;
-		currentCamPosition[2] = players[currentPlayer].position[2] - 2*players[currentPlayer].direction[2];
+		currentCamPosition[0] = players[currentPlayer].cameraPosition[0];
+		currentCamPosition[1] = players[currentPlayer].cameraPosition[1] + 1;
+		currentCamPosition[2] = players[currentPlayer].cameraPosition[2];
 
 		currentCamTarget[0] = players[currentPlayer].position[0];
 		currentCamTarget[1] = players[currentPlayer].position[1] + 1;
