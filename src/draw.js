@@ -195,5 +195,8 @@ function draw() {
 	{
 		projectiles[i].draw();
 	}
-
+	for(var i=0;i<track.length;i++)
+	{
+		track[i].draw();
+	}
 }

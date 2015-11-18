@@ -44,6 +44,18 @@ Player.prototype.move = function()
 			return;
 		}
 	}
+	for(var i=0;i<track.length;i++)
+	{
+		
+		if(track[i].testCollisionRight(this))
+		{
+			return;
+		}
+		else if(track[i].testCollisionLeft(this)){
+			return;
+		}
+		
+	}
 	this.position[0] = this.intendedPositionx;
 	this.position[1] = this.intendedPositiony;
 	this.position[2] = this.intendedPositionz;

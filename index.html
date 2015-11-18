@@ -13,6 +13,7 @@
 <script src="./src/objects/player.js"></script>
 <script src="./src/objects/static.js"></script>
 <script src="./src/objects/item.js"></script>
+<script src="./src/objects/track.js"></script>
 
 
 <script src="./src/camera.js"></script>
@@ -120,6 +121,7 @@
 	//Variáveis de Jogo
 	var players = [];
 	var items = [];
+	var track = [];
 	var projectiles = [];
 	var currentPlayer;
 	var focusedObject;
@@ -155,8 +157,8 @@
 		
 	}
 	function initTrack() { //To be defined at game select (even if it's just one...)
-
-    items.push(new StaticObject(0,0,0,models.segmento));
+	for(i=0;i<100;i=i+10)
+    track.push(new TrackSegment(0,0,i,models.segmento));
 
     /*
 		squareVertexPositionBuffer = gl.createBuffer();
