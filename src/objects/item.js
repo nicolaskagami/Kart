@@ -27,7 +27,8 @@ Box.prototype.testCollision = function(object)
 {
 	if(this.collisionArea.testCollision(object))	
 	{
-		object.getItem("GreenShell");
+		if(typeof object.getItem === 'function')
+			object.getItem("Random");
 		items.remove(this);
 	} else {
 		return false;
@@ -49,13 +50,12 @@ Mushroom.prototype = Object.create(StaticObject.prototype);
 var Banana = function(newPosition)
 {
 	this.position = newPosition.slice();
-	this.position[1]+=0.5;
 	this.speed = 0; 
 	this.angularSpeed = 0.1;
 	this.angle = 0;
 	this.direction = [0,0,1];
 	this.collisionArea = new CollidableCircle(this.position,0.8); // fix this
-	this.model = models.mushroom;
-	this.scale = [0.15,0.15,0.15];
+	this.model = models.banana;
+	this.scale = [0.4,0.4,0.4];
 }
 Banana.prototype = Object.create(MovableObject.prototype);

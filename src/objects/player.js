@@ -1,6 +1,8 @@
 var Player = function(x,y,z,model)
 {
 	this.position = [x,y,z];
+	this.front = [x,y,z];
+	this.back = [x,y,z];
 	this.maxSpeed = 0.5;
 	this.speed = 0; 
 	this.angle = 0;
@@ -56,18 +58,40 @@ Player.prototype.getItem = function(item)
 {
 	if(this.item == '')
 	{
-		this.item = item;
+		if(item == 'Random')
+		{
+			item = Math.floor(Math.random()*(3+1));
+			switch(item)
+			{
+				case 0: this.item = 'GreenShell'; break
+				case 1: this.item = 'Mushroom'; break
+				case 2: this.item = 'Banana'; break
+			}
+			//console.log(this.item);
+		} else {			
+			this.item = item;
+		}
 	}
+}
+Player.prototype.updateFrontBack = function()
+{
+	this.front[0] = this.position[0] + 1.2*this.direction[0];
+	this.front[1] = this.position[1] + 1.2*this.direction[1];
+	this.front[2] = this.position[2] + 1.2*this.direction[2];
+	this.back[0] = this.position[0] - 1.2*this.direction[0];
+	this.back[1] = this.position[1] - 1.2*this.direction[1];
+	this.back[2] = this.position[2] - 1.2*this.direction[2];
 }
 Player.prototype.useItem = function()
 {
+	this.updateFrontBack();
 	switch(this.item)
 	{
-		case 'GreenShell' :  projectiles.push(new GreenShell(this.position,this.direction));
+		case 'GreenShell' :  projectiles.push(new GreenShell(this.front,this.direction));
 				break;
 		case 'Mushroom' :  items.push(new Mushroom(this.position));
 				break;
-		case 'Banana' :  items.push(new Banana(this.position));
+		case 'Banana' :  items.push(new Banana(this.back));
 				break;
 		default: //No Item, make sound or something
 	}
