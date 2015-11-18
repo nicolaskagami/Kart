@@ -13,7 +13,7 @@ var Player = function(x,y,z,model)
 	this.angularSpeed = 0;
 	
 	this.model = model;
-	this.height=0;
+	this.height = 0;
 	this.scale = [1.0,1.0,1.0];
 	this.collisionArea = new CollidableCircle(this.position,0.8);
 	
@@ -106,7 +106,9 @@ Player.prototype.getItem = function(item)
 				case 2: this.itemName = 'Banana'; break
 			}
 			console.log(this.itemName);
-		} 	
+		} else {
+			this.itemName = item;
+		}
 		switch(this.itemName)
 		{
 			case 'GreenShell' :  

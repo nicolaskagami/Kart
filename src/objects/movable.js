@@ -1,7 +1,7 @@
 var MovableObject = function(x,y,z,model)
 {
 	this.position = [x,y,z];
-	this.height=0;
+	this.height = 0;
 	this.speed = 0; 
 	this.angularSpeed = 0;
 	this.angle = 0;
@@ -23,6 +23,7 @@ MovableObject.prototype.move = function()
 		{
 			if(players[i].testCollision(this))
 			{
+				this.collide(players[i]);
 				return;
 			}
 		}
@@ -31,16 +32,23 @@ MovableObject.prototype.move = function()
 	{
 		if(items[i].testCollision(this))
 		{
+			this.collide(items[i]);
 			return;
 		}
 	}
 	for(var i=0;i<track.length;i++)
 	{
+		//We should change this... Make each wall a separate entity?
 		if(track[i].testCollisionRight(this))
 		{
+			//this.bounce(track[i]);
+			this.collide(items[i]);
 			return;
 		}
-		else if(track[i].testCollisionLeft(this)){
+		else if(track[i].testCollisionLeft(this))
+	    {
+			//this.bounce(track[i]);
+			this.collide(items[i]);
 			return;
 		}
 	}
@@ -61,4 +69,11 @@ MovableObject.prototype.turn = function(angle)
 	this.angle +=angle;
 	this.direction[0] += Math.sin(this.angle);
 	this.direction[2] += Math.cos(this.angle);
+}
+MovableObject.prototype.collide = function(object)
+{
+}
+MovableObject.prototype.bounce = function(object)
+{
+	
 }
