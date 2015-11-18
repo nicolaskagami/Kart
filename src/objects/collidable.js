@@ -34,3 +34,25 @@ CollidableCircle.prototype =
 			return false;
 	}
 };
+
+var CollidableArea = function(position,larguraX,larguraZ)
+{
+	console.log("Rectangle Collidable");
+	this.position = position;
+	this.larguraX = larguraX;
+	this.larguraZ = larguraZ;
+	//this.halfside = halfside;
+}
+CollidableArea.prototype = 
+{
+	testCollision: function(object)
+	{
+		if( (object.intendedPositionx>this.position[0]-this.larguraX)&&
+			(object.intendedPositionx<this.position[0]+this.larguraX)&&
+			(object.intendedPositionz>this.position[2]-this.larguraZ)&&
+			(object.intendedPositionz<this.position[2]+this.larguraZ))
+			return true;//Collision
+		else
+			return false;
+	}
+};

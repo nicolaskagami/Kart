@@ -86,6 +86,7 @@ function initTexture(){
 	OBJ.initMeshBuffers(gl, models.banana);
 
 	OBJ.initMeshBuffers(gl, models.segmento);
+	OBJ.initMeshBuffers(gl, models.curva);
 	
 	//Playable Characters
 	OBJ.bindTextures(gl, models.mario);
@@ -99,6 +100,7 @@ function initTexture(){
 	OBJ.bindTextures(gl, models.banana);
 	
 	OBJ.bindTextures(gl, models.segmento);
+	OBJ.bindTextures(gl, models.curva);
 }
 function initShaders() {
 

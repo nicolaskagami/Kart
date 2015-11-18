@@ -156,8 +156,11 @@
 		
 	}
 	function initTrack() { //To be defined at game select (even if it's just one...)
-	for(i=0;i<20;i=i+2)
-    track.push(new TrackSegment(0,0,i,models.segmento));
+	//for(i=0;i<20;i=i+2)
+    track.push(new Curve(0,0,10,models.curva));
+    track.push(new TrackSegment(0,0,0,models.segmento));
+    //track[1].turn(1.57) //toração 90 graus
+    
 
     /*
 		squareVertexPositionBuffer = gl.createBuffer();
@@ -229,7 +232,8 @@
 			'greenShell': 'models/Items/GreenShell/GreenShell.obj',
 			//'redShell': 'models/Items/RedShell/RedShell.obj'//almost works
 			'mushroom': 'models/Items/Mushroom/ItmMushroom.obj',
-            'segmento': 'models/Pista/segmentoReta.obj',
+            'segmento': 'models/Pista/reta/segmentoReta.obj',
+            'curva': 'models/Pista/curva/curva.obj',
 			'banana': 'models/Items/Banana/bananapeel.obj'
     }, init);
 }
