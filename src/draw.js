@@ -83,6 +83,7 @@ function initTexture(){
 	OBJ.initMeshBuffers(gl, models.box);
 	OBJ.initMeshBuffers(gl, models.greenShell);
 	OBJ.initMeshBuffers(gl, models.mushroom);
+	OBJ.initMeshBuffers(gl, models.banana);
 
 	OBJ.initMeshBuffers(gl, models.segmento);
 	
@@ -95,7 +96,8 @@ function initTexture(){
 	OBJ.bindTextures(gl, models.box);
 	OBJ.bindTextures(gl, models.greenShell);
 	OBJ.bindTextures(gl, models.mushroom);
-
+	OBJ.bindTextures(gl, models.banana);
+	
 	OBJ.bindTextures(gl, models.segmento);
 }
 function initShaders() {
