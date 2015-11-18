@@ -33,7 +33,7 @@ MovableObject.prototype.move = function()
 			return;
 		}
 	}
-	for(var i=0;i<trackSegments.length;i++)
+	for(var i=0;i<track.length;i++)
 	{
 		if(track[i].testCollisionRight(this))
 		{

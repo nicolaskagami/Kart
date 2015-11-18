@@ -10,7 +10,7 @@ var TrackSegment = function(x,y,z,model)
 	this.collisionAreaRight = new CollidableRectangle(this.leftWallPos,1);
 	this.collisionAreaLeft = new CollidableRectangle(this.rightWallPos,1);
 	this.model = model;
-	this.scale = [1.0,1.0,1.0];
+	this.scale = [1.0,1.0,0.25];
 }
 TrackSegment.prototype = Object.create(Drawable.prototype);
 TrackSegment.prototype.move = function()
