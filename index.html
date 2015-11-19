@@ -138,7 +138,7 @@
 	};
     
 	function initPlayers() { //To be defined at game select
-		players.push(new Player(0,0,0,models.mario));
+		players.push(new Player(0,0,-10,models.mario));
 		players.push(new Player(3,0,0,models.bowser));
 		players.push(new Player(5,0,0,models.peach));
 		//players[0].setCollisionCircle(0,1,0,1);
@@ -280,5 +280,7 @@
         <h4>Kartellanister</h4>
         <div id="section">
               <canvas id="Mairo-canvas" style="border: none;" width="1280" height="720"></canvas>
+              <p id="message"></p>
         </div>
+        	
 </body>
