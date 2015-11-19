@@ -1,5 +1,7 @@
 var Player = function(x,y,z,model)
 {
+	this.voltasCompletas = 0;
+	this.waypoints = []
 	this.position = [x,y,z];
 	this.front = [x,y,z];
 	this.back = [x,y,z];
@@ -7,7 +9,8 @@ var Player = function(x,y,z,model)
 	this.cameraDistance = 2.2;
 	this.direction = [0,0,1];
 	
-	this.maxSpeed = 0.3;
+	//this.maxSpeed = 0.3;
+	this.maxSpeed = 1.3;
 	this.speed = 0; 
 	this.angle = 0;
 	this.angularSpeed = 0;
@@ -72,18 +75,21 @@ Player.prototype.move = function()
 			return;
 		}
 	}
-	for(var i=0;i<track.length;i++)
+	for(var i=0;i<track.length-1;i++)
 	{
 		
-		if(track[i].testCollisionRight(this))
+		
+		if(track[i] instanceof Curve && track[i].testCollision(this))
 		{
-			return;
-		}
-		else if(track[i].testCollisionLeft(this)){
-			return;
+			this.addWaypoint(track[i].waypoint);
 		}
 		
+		
 	}
+
+	if(track[track.length-1].testCollision(this)){//chegada
+			track[track.length-1].testCourse(this);
+		}
 	this.position[0] = this.intendedPositionx;
 	this.position[1] = this.intendedPositiony;
 	this.position[2] = this.intendedPositionz;
@@ -177,3 +183,22 @@ Player.prototype.updateCamera = function(camInertia)
 	this.cameraPosition[1] += camInertia*(this.position[1] - this.cameraDistance*this.direction[1] - this.cameraPosition[1]);
 	this.cameraPosition[2] += camInertia*(this.position[2] - this.cameraDistance*this.direction[2] - this.cameraPosition[2]);
 }
+
+Player.prototype.addWaypoint = function(waypoint)
+{
+	possui = false
+    var i = this.waypoints.length;
+    while (i--) {
+       if (this.waypoints[i] === waypoint) {
+           possui = true;
+       }
+    }
+	
+
+    if(!possui){
+    	this.waypoints.push(waypoint)
+    	console.log(this.waypoints)
+    }
+
+}
+

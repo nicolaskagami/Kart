@@ -156,10 +156,44 @@
 		
 	}
 	function initTrack() { //To be defined at game select (even if it's just one...)
-	//for(i=0;i<20;i=i+2)
-    track.push(new Curve(0,0,10,models.curva));
-    track.push(new TrackSegment(0,0,0,models.segmento));
+	//for(i=0;i<40;i=i+8)
+	var z = 0;
+	while(z<=40){
+		track.push(new TrackSegment(0,0,z,models.segmento));
+		z = z+8;
+	}
+    track.push(new Curve(0,0,z,models.curva,1));
+    var x = 8;
+    while(x<=40){
+		track.push(new TrackSegment(x,0,z,models.segmento));
+		track[track.length -1].turn(1.57)
+		x = x+8;
+	}
+    track.push(new Curve(x,0,z,models.curva,2));
+    track[track.length -1].turn(1.57)
+
+
+    //x = x+8;
+    z = z-8;
+	while(z>=-8){
+		track.push(new TrackSegment(x,0,z,models.segmento));
+		z = z-8;
+	}
+
+    track.push(new Curve(x,0,z,models.curva,3));
+    track[track.length -1].turn(3.14)
+
+    x = x-8;
+    while(x>=8){
+		track.push(new TrackSegment(x,0,z,models.segmento));
+		track[track.length -1].turn(1.57)
+		x = x-8;
+	}
+    track.push(new Curve(x,0,z,models.curva,4));
+    track[track.length -1].turn(-1.57)
     //track[1].turn(1.57) //toração 90 graus
+    z = z+8;
+    track.push(new FinishLine(x,0,z,models.linhaChegada,4));
     
 
     /*
@@ -234,7 +268,8 @@
 			'mushroom': 'models/Items/Mushroom/ItmMushroom.obj',
             'segmento': 'models/Pista/reta/segmentoReta.obj',
             'curva': 'models/Pista/curva/curva.obj',
-			'banana': 'models/Items/Banana/bananapeel.obj'
+			'banana': 'models/Items/Banana/bananapeel.obj',
+			'linhaChegada': 'models/Pista/chegada/segmentoChegada.obj',
     }, init);
 }
 </script>
