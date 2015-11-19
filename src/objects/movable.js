@@ -36,6 +36,7 @@ MovableObject.prototype.move = function()
 			return;
 		}
 	}
+	/*
 	for(var i=0;i<track.length;i++)
 	{
 		//We should change this... Make each wall a separate entity?
@@ -51,7 +52,7 @@ MovableObject.prototype.move = function()
 			this.collide(items[i]);
 			return;
 		}
-	}
+	}*/
 	this.position[0] = this.intendedPositionx;
 	this.position[1] = this.intendedPositiony;
 	this.position[2] = this.intendedPositionz;
