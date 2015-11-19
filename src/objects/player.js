@@ -10,7 +10,7 @@ var Player = function(x,y,z,model)
 	this.direction = [0,0,1];
 	
 	//this.maxSpeed = 0.3;
-	this.maxSpeed = 1.3;
+	this.maxSpeed = 0.3;
 	this.speed = 0; 
 	this.angle = 0;
 	this.angularSpeed = 0;
@@ -90,6 +90,15 @@ Player.prototype.move = function()
 	if(track[track.length-1].testCollision(this)){//chegada
 			track[track.length-1].testCourse(this);
 		}
+
+	for(var i=0;i<walls.length;i++)
+		{
+			if(walls[i].testCollision(this))
+			{
+				return;
+			}
+		}
+
 	this.position[0] = this.intendedPositionx;
 	this.position[1] = this.intendedPositiony;
 	this.position[2] = this.intendedPositionz;

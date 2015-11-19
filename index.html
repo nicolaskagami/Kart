@@ -122,6 +122,7 @@
 	var items = [];
 	var track = [];
 	var projectiles = [];
+    var walls = [];
 	var currentPlayer;
 	var focusedObject;
 
@@ -139,7 +140,7 @@
     
 	function initPlayers() { //To be defined at game select
 		players.push(new Player(0,0,-10,models.mario));
-		players.push(new Player(3,0,0,models.bowser));
+		players.push(new Player(48,0,0,models.bowser));
 		players.push(new Player(5,0,0,models.peach));
 		//players[0].setCollisionCircle(0,1,0,1);
 	}
@@ -195,7 +196,12 @@
     z = z+8;
     track.push(new FinishLine(x,0,z,models.linhaChegada,4));
     
-
+    walls.push(new CollidableArea([24,0,16],20,28));
+    walls.push(new CollidableArea([54,0,16],2,36));
+    walls.push(new CollidableArea([-6,0,16],2,36));
+    
+    walls.push(new CollidableArea([24,0,54],36,2));
+    walls.push(new CollidableArea([24,0,-22],36,2));
     /*
 		squareVertexPositionBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
