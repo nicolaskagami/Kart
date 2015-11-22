@@ -1,5 +1,7 @@
 var Player = function(x,y,z,model)
 {
+	this.initialx = x;
+	this.initialz = z;
 	this.voltasCompletas = 0;
 	this.waypoints = []
 	this.position = [x,y,z];
@@ -95,7 +97,7 @@ Player.prototype.move = function()
 		{
 			if(walls[i].testCollision(this))
 			{
-				return;
+				return false;
 			}
 		}
 
@@ -209,5 +211,15 @@ Player.prototype.addWaypoint = function(waypoint)
     	console.log(this.waypoints)
     }
 
+}
+Player.prototype.testWaypoint = function(waypoint){
+	possui = false
+    var i = this.waypoints.length;
+    while (i--) {
+       if (this.waypoints[i] === waypoint) {
+           possui = true;
+       }
+    }
+    return possui;
 }
 

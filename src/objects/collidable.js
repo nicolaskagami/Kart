@@ -54,5 +54,15 @@ CollidableArea.prototype =
 			return true;//Collision
 		else
 			return false;
+	},
+	testCollisionPosition: function(intendedPosition)
+	{
+		if( (intendedPosition[0]>this.position[0]-this.larguraX)&&
+			(intendedPosition[0]<this.position[0]+this.larguraX)&&
+			(intendedPosition[2]>this.position[2]-this.larguraZ)&&
+			(intendedPosition[2]<this.position[2]+this.larguraZ))
+			return true;//Collision
+		else
+			return false;
 	}
 };

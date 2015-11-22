@@ -14,6 +14,7 @@
 <script src="./src/objects/static.js"></script>
 <script src="./src/objects/item.js"></script>
 <script src="./src/objects/track.js"></script>
+<script src="./src/controller.js"></script>
 
 <script src="./src/camera.js"></script>
 <script src="./src/input.js"></script>
@@ -123,8 +124,11 @@
 	var track = [];
 	var projectiles = [];
     var walls = [];
+    var curves = [];
 	var currentPlayer;
 	var focusedObject;
+    //Outros jogadores
+    var jerry;
 
     //Funções matemáticas
     function radToDeg(r) {
@@ -140,8 +144,8 @@
     
 	function initPlayers() { //To be defined at game select
 		players.push(new Player(0,0,-10,models.mario));
-		players.push(new Player(48,0,0,models.bowser));
-		players.push(new Player(5,0,0,models.peach));
+		players.push(new Player(0,0,3,models.bowser));
+		players.push(new Player(1,0,0,models.peach));
 		//players[0].setCollisionCircle(0,1,0,1);
 	}
 	function initObjects(){ //To be defined at game select
@@ -164,6 +168,8 @@
 		z = z+8;
 	}
     track.push(new Curve(0,0,z,models.curva,1));
+    curves.push(track[track.length-1]);
+    
     var x = 8;
     while(x<=40){
 		track.push(new TrackSegment(x,0,z,models.segmento));
@@ -173,6 +179,7 @@
     track.push(new Curve(x,0,z,models.curva,2));
     track[track.length -1].turn(1.57)
 
+    curves.push(track[track.length-1]);
 
     //x = x+8;
     z = z-8;
@@ -184,6 +191,8 @@
     track.push(new Curve(x,0,z,models.curva,3));
     track[track.length -1].turn(3.14)
 
+    curves.push(track[track.length-1]);
+
     x = x-8;
     while(x>=8){
 		track.push(new TrackSegment(x,0,z,models.segmento));
@@ -192,16 +201,18 @@
 	}
     track.push(new Curve(x,0,z,models.curva,4));
     track[track.length -1].turn(-1.57)
+
+    curves.push(track[track.length-1]);
     //track[1].turn(1.57) //toração 90 graus
     z = z+8;
     track.push(new FinishLine(x,0,z,models.linhaChegada,4));
     
-    walls.push(new CollidableArea([24,0,16],20,28));
-    walls.push(new CollidableArea([54,0,16],2,36));
-    walls.push(new CollidableArea([-6,0,16],2,36));
+    walls.push(new CollidableArea([24,0,16],20,28));//central
+    walls.push(new CollidableArea([54,0,16],2,36));//esquerda
+    walls.push(new CollidableArea([-6,0,16],2,36));//direita
     
-    walls.push(new CollidableArea([24,0,54],36,2));
-    walls.push(new CollidableArea([24,0,-22],36,2));
+    walls.push(new CollidableArea([24,0,54],36,2));//fundo
+    walls.push(new CollidableArea([24,0,-22],36,2));//fronte
     /*
 		squareVertexPositionBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
@@ -231,9 +242,24 @@
 		initTrack();
         initTexture();
         initDrawingParameters();
+        initAI();
 		
 		currentPlayer = 0;
         gameLoop();
+    }
+   function initAI(){
+         jerry = new Controller();
+    }
+    function controlPlayers(){
+
+        for(var i=0;i<players.length;i++)
+        {
+
+            if(players[i]!=players[currentPlayer])
+            jerry.movePlayer(players[i]);
+            //players[i].move();
+        }
+
     }
 
     function update() {
@@ -257,6 +283,7 @@
     
     function gameLoop() {
 		input();
+        controlPlayers();
         update();
         draw();
         requestAnimationFrame(gameLoop);

@@ -5,9 +5,9 @@ var TrackSegment = function(x,y,z,model)
 	this.position = [x,y,z];
 	this.angularSpeed = 0;
 	this.angle = 0;
-	this.leftWallPos = [x-5,y,z];
-	this.rightWallPos = [x+5,y,z];
-	//this.collisionAreaRight = new CollidableArea(this.leftWallPos,1,4);
+	//this.leftWallPos = [x-5,y,z];
+	//this.rightWallPos = [x+5,y,z];
+	this.collisionArea = new CollidableArea(this.position,4,4);
 	//this.collisionAreaLeft = new CollidableArea(this.rightWallPos,1,4);
 	this.model = model;
 	this.height=0;
@@ -22,12 +22,13 @@ TrackSegment.prototype.turn = function(angle)
 {
 	this.angle +=angle;
 }
-/*
-TrackSegment.prototype.testCollisionRight = function(object)
+
+TrackSegment.prototype.testCollision = function(object)
 {
 	//console.log("Wall Right");
-	return this.collisionAreaRight.testCollision(object);
+	return this.collisionArea.testCollision(object);
 }
+/*
 TrackSegment.prototype.testCollisionLeft = function(object)
 {
 	//console.log("Wall Left");
@@ -56,6 +57,7 @@ Curve.prototype.move = function()
 Curve.prototype.turn = function(angle)
 {
 	this.angle +=angle;
+	this.angle = angle;
 }
 
 Curve.prototype.testCollision = function(object)
@@ -93,6 +95,7 @@ FinishLine.prototype.move = function()
 FinishLine.prototype.turn = function(angle)
 {
 	this.angle +=angle;
+	this.angle = angle;
 }
 FinishLine.prototype.testCollision = function(object)
 {
