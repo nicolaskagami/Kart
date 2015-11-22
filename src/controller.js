@@ -26,7 +26,6 @@ movePlayer: function(player){
             else if(walls[i].testCollisionPosition([player.position[0]-distanceSide,player.position[1],player.position[2]])){
                 player.turn(turnSpeed);
             }
-            else
             for(j=0;j<curves.length;j++) 
                 if(curves[j].testCollision(player) && walls[i].testCollisionPosition([player.position[0],player.position[1],player.position[2]+distanceFront])){
                 player.turn(turnSpeed/turnSpeedDumpner);
@@ -39,8 +38,7 @@ movePlayer: function(player){
             }
             else if(walls[i].testCollisionPosition([player.position[0]-distanceSide,player.position[1],player.position[2]])){
                 player.turn(-turnSpeed);
-            }
-            else 
+            } 
                 for(j=0;j<curves.length;j++) 
                     if(curves[j].testCollision(player) && walls[i].testCollisionPosition([player.position[0],player.position[1],player.position[2]+distanceFront])){
                 player.turn(turnSpeed/turnSpeedDumpner);
@@ -53,8 +51,7 @@ movePlayer: function(player){
             }
             else if(walls[i].testCollisionPosition([player.position[0],player.position[1],player.position[2]+distanceSide])){
                 player.turn(-turnSpeed);
-            }
-            else 
+            } 
                 for(j=0;j<curves.length;j++) 
                     if(curves[j].testCollision(player) && walls[i].testCollisionPosition([player.position[0]-distanceFront,player.position[1],player.position[2]])){
                 player.turn(turnSpeed/turnSpeedDumpner);
@@ -67,8 +64,7 @@ movePlayer: function(player){
             }
             else if(walls[i].testCollisionPosition([player.position[0],player.position[1],player.position[2]-distanceSide])){
                 player.turn(-turnSpeed);
-            }
-            else 
+            } 
                 for(j=0;j<curves.length;j++) 
                     if(curves[j].testCollision(player) && walls[i].testCollisionPosition([player.position[0]+distanceFront,player.position[1],player.position[2]])){
                 player.turn(turnSpeed/turnSpeedDumpner);

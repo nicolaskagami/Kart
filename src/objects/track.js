@@ -106,9 +106,8 @@ FinishLine.prototype.testCollision = function(object)
 FinishLine.prototype.testCourse = function(object)
 {
 	//console.log("Wall Left");
-	document.getElementById("message").innerHTML = object.voltasCompletas;
+	document.getElementById("message").innerHTML = players[currentPlayer].voltasCompletas;
 	for(i=0;i<this.waypointsNumber;i++){
-		console.log(i)
 		if(object.waypoints[i] != i+1){
 			object.waypoints = [];
 			return;
