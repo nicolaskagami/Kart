@@ -13,7 +13,7 @@ var camAngle2;
 function initCamera() {
 	camAngle1 =0;
 	camAngle2 =0;
-	lockedCamera = false;
+	lockedCamera = true;
 	cameraMouseControl = false;
 	cameraDirection = [0,0,1];
 	currentCamPosition = [0,1,-5];
@@ -24,6 +24,7 @@ function initCamera() {
 function updateCamera() {
 	if(lockedCamera)
 	{
+		if(vPressed){
 		currentCamPosition[0] = players[currentPlayer].cameraPosition[0];
 		currentCamPosition[1] = players[currentPlayer].cameraPosition[1] + 1;
 		currentCamPosition[2] = players[currentPlayer].cameraPosition[2];
@@ -31,6 +32,16 @@ function updateCamera() {
 		currentCamTarget[0] = players[currentPlayer].position[0];
 		currentCamTarget[1] = players[currentPlayer].position[1] + 1;
 		currentCamTarget[2] =  players[currentPlayer].position[2];
+		}
+		else{
+		currentCamPosition[0] = players[currentPlayer].position[0];
+		currentCamPosition[1] = players[currentPlayer].position[1]+1;
+		currentCamPosition[2] = players[currentPlayer].position[2];
+
+		currentCamTarget[0] = players[currentPlayer].position[0] + players[currentPlayer].direction[0];
+		currentCamTarget[1] = players[currentPlayer].position[1]+1;
+		currentCamTarget[2] =  players[currentPlayer].position[2] + players[currentPlayer].direction[2];
+		}
 	
 	}else{
 

@@ -114,6 +114,11 @@ FinishLine.prototype.testCourse = function(object)
 		}
 	}
 
+	for(var i=0;i<usedItems.length;i++){
+            items.push(usedItems[i]);
+        }
+        usedItems = [];
+
 	object.waypoints=[];
 	object.voltasCompletas++;
 	console.log("VOLTA COMPLETA " + object.voltasCompletas);

@@ -125,6 +125,7 @@
 	var projectiles = [];
     var walls = [];
     var curves = [];
+    var usedItems = [];
 	var currentPlayer;
 	var focusedObject;
     //Outros jogadores
@@ -279,6 +280,8 @@
         {
             projectiles[i].move();
         }
+
+
     }
     
     function gameLoop() {
@@ -286,6 +289,7 @@
         controlPlayers();
         update();
         draw();
+        drawMinimap();
         requestAnimationFrame(gameLoop);
     }
 
@@ -312,7 +316,7 @@
 <body>
         <h4>Kartellanister</h4>
         <div id="section">
-              <canvas id="Mairo-canvas" style="border: none;" width="1280" height="720"></canvas>
+              <canvas id="Mairo-canvas" style="border: none;" width="1280" height="1024"></canvas>
               <p id="message"></p>
         </div>
         	

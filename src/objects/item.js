@@ -42,10 +42,12 @@ Box.prototype.testCollision = function(object)
 			object.getItem("Random");
 		}
 		items.remove(this);
+		usedItems.push(this);
 	} else {
 		return false;
 	}
 }
+
 var Mushroom = function(newPosition)
 {
 	this.position = newPosition.slice();
@@ -68,6 +70,7 @@ Mushroom.prototype.testCollision = function(object)
 			object.getItem('Mushroom');
 		}
 		items.remove(this);
+		usedItems.push(this);
 	} else {
 		return false;
 	}

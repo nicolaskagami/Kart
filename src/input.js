@@ -3,6 +3,7 @@ var currentlyPressedKeys = {};
 
 var mouseX;
 var mouseY;
+var vPressed = false;
 
 function initInput(doc) {
 	doc.onkeydown = handleKeyDown;
@@ -37,8 +38,8 @@ function handleMouseUp(event) {
 
 
 function handleKey() {
-	if(lockedCamera)
-	{
+	//if(lockedCamera)
+	//{
 		if (currentlyPressedKeys[87]) {
 			// W 
 			players[currentPlayer].accelerate();
@@ -60,7 +61,18 @@ function handleKey() {
 			players[currentPlayer].useItem();
 			currentlyPressedKeys[32] = false;
 		}
-	}
+		if (currentlyPressedKeys[86]) {
+			//V
+			if(!vPressed)
+			vPressed = true;
+			else{
+				vPressed = false;
+			}
+			currentlyPressedKeys[86] = false;
+		}
+
+	//}
+	/*
 	else
 	{
 	
@@ -92,22 +104,24 @@ function handleKey() {
 		}
 		if (currentlyPressedKeys[67]) {
 			// C
-			if(lockedCamera)
-				lockedCamera = false;
-			else
+		//	if(lockedCamera)
+		//		lockedCamera = false;
+		//	else
 				lockedCamera = true;
-			currentlyPressedKeys[67] = false; //"debouncer"
+		//	currentlyPressedKeys[67] = false; //"debouncer"
 		}
 		if (currentlyPressedKeys[86]) {
 			//V
-			currentPlayer = (currentPlayer +1) % players.length;
-			console.log(currentPlayer);
-			currentlyPressedKeys[86] = false //"debouncer"
+
+		//	currentPlayer = (currentPlayer +1) % players.length;
+		//	console.log(currentPlayer);
+		//	currentlyPressedKeys[86] = false //"debouncer"
 		}
-		if (currentlyPressedKeys[90]) {
+		//if (currentlyPressedKeys[90]) {
 			//V
-			camAngle+=0.1;
-		}
+		//	camAngle+=0.1;
+		//}
+		*/
 }
 
 function input() {

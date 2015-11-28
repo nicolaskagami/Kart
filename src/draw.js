@@ -206,3 +206,78 @@ function draw() {
 		track[i].draw();
 	}
 }
+
+function drawMinimap() {
+
+	gl.viewport(5, 512.0, canvas.clientWidth/2, canvas.clientHeight/2);
+	//gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	
+	// Definition of our projection and camera matrix and sending to the vertex shader
+	projectionMatrix = makePerspective(degToRad(60),canvas.clientWidth / canvas.clientHeight, 1, 2000);
+	gl.uniformMatrix4fv(projectionLocation, false, projectionMatrix);
+	
+	// Definition of our camera matrix
+	viewMatrix = makeLookAt(
+	  [24,50,16], //Camera position
+	  [24,0,16], //TargetTarget
+	  [1,0,0] //Up Vector
+	);
+	viewMatrix = makeInverse(viewMatrix);
+	
+	modelMatrix = makeIdentity();
+	// Multiplying model and camera matrix to send to the vertex buffer
+	
+	modelView = matrixMultiply(modelMatrix,viewMatrix);
+	gl.uniformMatrix4fv(modelViewLocation, false, modelView);
+	
+	//  Sending the normal matrix to the vertex shader (since we are transforming our vertex,
+	// the normals need to transform together, but maintaining perpendicularity with the triangle)
+	// Explanation of this matrix too advanced to our context, but if you want to understand better,
+	// read this article: http://www.lighthouse3d.com/tutorials/glsl-12-tutorial/the-normal-matrix/
+	//var normalMatrix = makeTranspose(makeInverse(modelView));
+	//gl.uniformMatrix4fv(normalMatrixLocation, false, normalMatrix);
+	
+	/*
+		Sending light values to the shaders
+	*/
+	gl.uniform1i(useLightLocation, lighting);
+	
+	gl.uniform3fv(lightDirectionLocation, lightDirection);
+	
+	gl.uniform4fv(ambientLightLocation, ambientLight);
+	gl.uniform4fv(diffuseLightLocation, diffuseLight);
+	gl.uniform4fv(specularLightLocation, specularLight);
+	gl.uniform1f(shininessLocation, shininess);
+	
+	gl.uniform4fv(ambientMaterialLocation, ambientMaterial);
+	gl.uniform4fv(diffuseMaterialLocation, diffuseMaterial);
+	gl.uniform4fv(specularMaterialLocation, specularMaterial);
+	
+	/*
+		Sending the buffers to the shaders
+	*/
+	modelMatrix = makeIdentity();
+	modelView = matrixMultiply(modelMatrix,viewMatrix);
+	gl.uniformMatrix4fv(modelViewLocation, false, modelView);
+
+	//gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
+	//gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	//gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
+	
+	for(var i=0;i<players.length;i++)
+	{
+		players[i].draw();
+	}
+	for(var i=0;i<items.length;i++)
+	{
+		items[i].draw();
+	}
+	for(var i=0;i<projectiles.length;i++)
+	{
+		projectiles[i].draw();
+	}
+	for(var i=0;i<track.length;i++)
+	{
+		track[i].draw();
+	}
+}
