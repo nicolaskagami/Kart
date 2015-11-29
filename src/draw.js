@@ -84,10 +84,12 @@ function initTexture(){
 	OBJ.initMeshBuffers(gl, models.greenShell);
 	OBJ.initMeshBuffers(gl, models.mushroom);
 	OBJ.initMeshBuffers(gl, models.banana);
-
+	//Track
 	OBJ.initMeshBuffers(gl, models.segmento);
 	OBJ.initMeshBuffers(gl, models.curva);
 	OBJ.initMeshBuffers(gl, models.linhaChegada);
+	//Markers
+	OBJ.initMeshBuffers(gl, models.marioMarker);
 	
 	//Playable Characters
 	OBJ.bindTextures(gl, models.mario);
@@ -99,10 +101,12 @@ function initTexture(){
 	OBJ.bindTextures(gl, models.greenShell);
 	OBJ.bindTextures(gl, models.mushroom);
 	OBJ.bindTextures(gl, models.banana);
-	
+	//Track
 	OBJ.bindTextures(gl, models.segmento);
 	OBJ.bindTextures(gl, models.curva);
 	OBJ.bindTextures(gl, models.linhaChegada);
+	//Markers
+	OBJ.bindTextures(gl, models.marioMarker);
 }
 function initShaders() {
 
@@ -218,7 +222,7 @@ function drawMinimap() {
 	
 	// Definition of our camera matrix
 	viewMatrix = makeLookAt(
-	  [24,50,16], //Camera position
+	  [24,80,16], //Camera position
 	  [24,0,16], //TargetTarget
 	  [1,0,0] //Up Vector
 	);
@@ -266,7 +270,7 @@ function drawMinimap() {
 	
 	for(var i=0;i<players.length;i++)
 	{
-		players[i].draw();
+		players[i].marker.draw();
 	}
 	for(var i=0;i<items.length;i++)
 	{

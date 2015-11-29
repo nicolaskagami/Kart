@@ -15,6 +15,7 @@
 <script src="./src/objects/item.js"></script>
 <script src="./src/objects/track.js"></script>
 <script src="./src/controller.js"></script>
+<script src="./src/objects/marker.js"></script>
 
 <script src="./src/camera.js"></script>
 <script src="./src/input.js"></script>
@@ -144,9 +145,9 @@
 	};
     
 	function initPlayers() { //To be defined at game select
-		players.push(new Player(0,0,-10,models.mario));
-		players.push(new Player(0,0,3,models.bowser));
-		players.push(new Player(1,0,0,models.peach));
+		players.push(new Player(0,0,-10,models.mario,models.marioMarker));
+		players.push(new Player(0,0,3,models.bowser,models.marioMarker));
+		players.push(new Player(1,0,0,models.peach,models.marioMarker));
 		//players[0].setCollisionCircle(0,1,0,1);
 	}
 	function initObjects(){ //To be defined at game select
@@ -307,6 +308,7 @@
             'curva': 'models/Pista/curva/curva.obj',
 			'banana': 'models/Items/Banana/bananapeel.obj',
 			'linhaChegada': 'models/Pista/chegada/segmentoChegada.obj',
+            'marioMarker':'models/Markers/marker.obj'
     }, init);
 }
 </script>

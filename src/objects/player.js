@@ -1,10 +1,14 @@
-var Player = function(x,y,z,model)
+var Player = function(x,y,z,model,marker)
 {
+
 	this.initialx = x;
 	this.initialz = z;
 	this.voltasCompletas = 0;
 	this.waypoints = []
 	this.position = [x,y,z];
+
+	this.marker = new Marker(this.position,marker);
+
 	this.front = [x,y,z];
 	this.back = [x,y,z];
 	this.cameraPosition = [x,y,z+1];
@@ -104,7 +108,9 @@ Player.prototype.move = function()
 	this.position[0] = this.intendedPositionx;
 	this.position[1] = this.intendedPositiony;
 	this.position[2] = this.intendedPositionz;
-	
+	//Move the marker
+	this.marker.updatePosition(this.position);
+
 	//Angular Component
 	this.angle += this.angularSpeed;
 	this.speed*=0.98;
